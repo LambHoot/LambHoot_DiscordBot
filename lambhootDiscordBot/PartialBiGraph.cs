@@ -45,7 +45,8 @@ namespace lambhootDiscordBot
         public void retrain()
         {
             vocabulary = new Dictionary<string, Word>();//RESET THE VOCABULARY DUH!
-            minSentenceLength = 1, maxSentenceLength = int.MinValue;//AND RESET MAX AND MIN LENGTHS
+            minSentenceLength = 1;
+            maxSentenceLength = int.MinValue;//AND RESET MAX AND MIN LENGTHS
             file = new System.IO.StreamReader(trainingFilePath);
             buildVocabulary(file);
             file.Close();
