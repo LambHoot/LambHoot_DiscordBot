@@ -12,7 +12,7 @@ namespace lambhootDiscordBot
     {
         public static ulong lhBotId = 303749228583321602;//userId of the bot
         private static ulong lambhootId = 234016471297032194;//my discord userId
-        private static System.Random rng = new System.Random();
+        public static System.Random rng = new System.Random();
         public static bool logging = false;
         private System.IO.StreamWriter file;
 

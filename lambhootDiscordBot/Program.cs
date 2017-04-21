@@ -15,6 +15,7 @@ namespace lambhootDiscordBot
         static void Main(string[] args)
         {
             //MyBot lambhootBot = new MyBot();
+            PartialBiGraph myPartialBiGraph = new PartialBiGraph();
 
         }
 
