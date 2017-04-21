@@ -11,6 +11,7 @@ namespace lambhootDiscordBot
         public Dictionary<string, Word> vocabulary;
         private System.IO.StreamReader file;
         private string trainingFilePath;
+        public static int minSentenceLength = int.MaxValue, maxSentenceLength = int.MinValue;
 
         public PartialBiGraph()
         {
@@ -75,6 +76,72 @@ namespace lambhootDiscordBot
         #endregion TextFile and sentence parsing
 
 
+        #region Sentence Generation
+
+        public string generateNewSentence()
+        {
+            //build list of words
+            List<Word> sentence = new List<Word>();
+            int sentenceLength = (int)MyBot.randomDoubleRange(5, 20);
+            sentence.Add(selectRandomWord());
+
+            while(sentence.Count() < sentenceLength)
+            {
+                string newWordKey = sentence.Last().nextChosenWord();
+                if (newWordKey != null)
+                    sentence.Add(vocabulary[newWordKey]);
+                else
+                    sentence.Add(selectRandomWord());
+            }
+
+            //build string sentence
+            string returnString = "";
+            foreach (Word w in sentence)
+                returnString += w + " ";
+            Console.WriteLine(returnString);
+            return returnString;
+        }
+
+
+        public Word selectRandomWord()
+        {
+            Word returnWord = null;
+
+            if (vocabulary.Count() == 0)
+                return returnWord;
+
+            int currentBestIndex = -1;
+            float currentSmallestDifference = 99;
+
+            while (returnWord == null)
+            {
+                //pick the word with probability greater and closest to prob
+                float prob = Word.randomProbability();
+                for (int j = 0; j < vocabulary.Count(); j++)
+                {
+                    float thisDifference = vocabulary.ElementAt(j).Value.wordProb - prob;
+                    if (thisDifference < 0)//if lower, ignore
+                        continue;
+                    if (thisDifference < currentSmallestDifference)
+                    {
+                        currentSmallestDifference = thisDifference;
+                        currentBestIndex = j;
+                    }
+                }
+                if (currentBestIndex != -1)
+                {
+                    returnWord = vocabulary.ElementAt(currentBestIndex).Value;
+                    break;
+                }
+            }
+            return returnWord;
+        }
+
+
+
+        #endregion Sentence Generation
+
+
     }
 
 
@@ -137,19 +204,37 @@ namespace lambhootDiscordBot
         {
             //returns a word of possible
             //otherwise returns null
+            string returnString = null;
+
             if (wordAfterList.Count() == 0)
-                return null;
-            float prob = randomProbability();
-            //pick the wordAfter with probability greater and closest to prob
-            int currentBestIndex = 0;
-            for(int j = 0; j < wordAfterProbList.Count(); j++)
+                return returnString;
+            
+            int currentBestIndex = -1;
+            float currentSmallestDifference = 99;
+
+            for (int i = 0; i < 5; i++)
             {
-                //TO COMPLETE
+                //pick the wordAfter with probability greater and closest to prob
+                float prob = randomProbability();
+                for (int j = 0; j < wordAfterProbList.Count(); j++)
+                {
+                    float thisDifference = wordAfterProbList[j] - prob;
+                    if (thisDifference < 0)//if lower, ignore
+                        continue;
+                        if (thisDifference < currentSmallestDifference)
+                        {
+                            currentSmallestDifference = thisDifference;
+                            currentBestIndex = j;
+                        }
+
+                }
+                if (currentBestIndex != -1)
+                {
+                    returnString = wordAfterList[currentBestIndex];
+                    break;
+                }
             }
-
-
-
-            return "";
+            return returnString;
         }
 
 

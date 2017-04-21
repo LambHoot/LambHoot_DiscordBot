@@ -17,6 +17,15 @@ namespace lambhootDiscordBot
             //MyBot lambhootBot = new MyBot();
             PartialBiGraph myPartialBiGraph = new PartialBiGraph();
 
+            string s1 = myPartialBiGraph.generateNewSentence();
+            string s2 = myPartialBiGraph.generateNewSentence();
+            string s3 = myPartialBiGraph.generateNewSentence();
+            string s4 = myPartialBiGraph.generateNewSentence();
+            string s5 = myPartialBiGraph.generateNewSentence();
+
+            var x = 0;
+
+
         }
 
     }
