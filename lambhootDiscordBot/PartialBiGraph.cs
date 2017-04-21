@@ -133,10 +133,14 @@ namespace lambhootDiscordBot
                 }
                 else
                 {
-                    if(!Char.IsPunctuation(returnString.Last()))
-                        returnString += ",";//add a comma to it since it failed, if the last character isn't already a punctuation
-                    sentence.Add(selectRandomWord());
-                    returnString += " " + sentence.Last();
+                    if (sentence.Count() > 0)//possibility that sentence has failed on first try, in which case, don't do this
+                    {
+                        if (!Char.IsPunctuation(returnString.Last()))
+                            returnString += (MyBot.randomDoubleRange(0, 100) > 50) ? "," : ".";
+                        //add a comma or period to it since it failed, if the last character isn't already a punctuation
+                        sentence.Add(selectRandomWord());
+                        returnString += " " + sentence.Last();
+                    }
                 }
             }
             returnString = formatSentence(returnString);
@@ -149,7 +153,7 @@ namespace lambhootDiscordBot
         public string formatSentence(string sentence)
         {
             //remove white space at front
-            if (sentence.First().Equals(' '))
+            while (sentence.First().Equals(' '))
                 sentence = sentence.Remove(0, 1);
 
             //recapitalize
