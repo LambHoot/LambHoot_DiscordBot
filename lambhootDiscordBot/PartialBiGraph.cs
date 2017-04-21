@@ -11,7 +11,7 @@ namespace lambhootDiscordBot
         public Dictionary<string, Word> vocabulary;
         private System.IO.StreamReader file;
         private string trainingFilePath;
-        public static int minSentenceLength = int.MaxValue, maxSentenceLength = int.MinValue;
+        public static int minSentenceLength = 1, maxSentenceLength = int.MinValue;
 
         public PartialBiGraph()
         {
@@ -44,6 +44,8 @@ namespace lambhootDiscordBot
         public void addWordsFromLine(string line)
         {
             string[] stringWords = line.Split(' ');
+            //updates maxSentenceLength
+            maxSentenceLength = stringWords.Count() > maxSentenceLength ? stringWords.Count() : maxSentenceLength;
             for(int i = 0; i < stringWords.Count(); i++)
             {
                 if (vocabulary.ContainsKey(stringWords[i]))
@@ -78,11 +80,12 @@ namespace lambhootDiscordBot
 
         #region Sentence Generation
 
+        //GENERATE NEW SENTENCE
         public string generateNewSentence()
         {
             //build list of words
             List<Word> sentence = new List<Word>();
-            int sentenceLength = (int)MyBot.randomDoubleRange(5, 20);
+            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength);
             sentence.Add(selectRandomWord());
 
             while(sentence.Count() < sentenceLength)
@@ -98,7 +101,7 @@ namespace lambhootDiscordBot
             string returnString = "";
             foreach (Word w in sentence)
                 returnString += w + " ";
-            Console.WriteLine(returnString);
+            Console.WriteLine("NEW SENTENCE: " + returnString);
             return returnString;
         }
 
