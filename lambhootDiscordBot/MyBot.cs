@@ -12,7 +12,7 @@ namespace lambhootDiscordBot
     {
         public static ulong lhBotId = 303749228583321602;//userId of the bot
         private static ulong lambhootId = 234016471297032194;//my discord userId
-        private static System.Random rng = new System.Random();
+        public static System.Random rng = new System.Random();
         public static bool logging = false;
         private System.IO.StreamWriter file;
 
@@ -20,9 +20,12 @@ namespace lambhootDiscordBot
         private string botToken;
         private string logFilePath;
 
+        private PartialBiGram botPartialBiGram;
+
 
         public MyBot()
         {
+            
             SetUp();
         }
 
@@ -46,7 +49,8 @@ namespace lambhootDiscordBot
                 TokenType = TokenType.Bot,
                 UseInternalLogHandler = false
             });
-
+            Console.WriteLine("_Partial BiGraph_");
+            botPartialBiGram = new PartialBiGram(logFilePath);//closes the file when done
             file = new System.IO.StreamWriter(logFilePath, true);
 
             Run().GetAwaiter().GetResult();
@@ -111,6 +115,17 @@ namespace lambhootDiscordBot
                     await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave the poor man alone");
             }
 
+
+            //AI SPEAKING
+            DiscordUser possiblyBot = messageContainsUser(msgEvent.Message, lhBotId);
+            if (possiblyBot != null && msgEvent.MentionedUsers.Count() == 1)//only bot was mentioned
+            {
+                string newBiGraphSentence = botPartialBiGram.generateNewSentence();
+                await msgEvent.Message.Respond(newBiGraphSentence);
+                return;//no logging of either of these messages
+            }
+
+
             //LAMBHOOT SPECIFIC COMMANDS
             if (msgEvent.Message.Author.ID == lambhootId)
             {
@@ -164,6 +179,20 @@ namespace lambhootDiscordBot
                     }
                     return;//so it doesn't log the log end
                 }
+
+                //RETRAIN AI
+                if (msgEvent.Message.Content.ToLower().Equals("retrain"))
+                {
+                    await msgEvent.Message.Respond("Retraining now ⏲️");
+                    file.Close();
+                    botPartialBiGram.retrain();
+                    if(logging)
+                        file = new System.IO.StreamWriter(logFilePath, true);
+                    await msgEvent.Message.Respond("Trained and ready to roll 😎");
+                    await msgEvent.Message.Respond("Test me!");
+                }
+
+
             }
 
             //logging

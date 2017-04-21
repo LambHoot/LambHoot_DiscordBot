@@ -14,8 +14,8 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("_Discord Bot_");
             MyBot lambhootBot = new MyBot();
-
         }
 
     }
