@@ -20,9 +20,12 @@ namespace lambhootDiscordBot
         private string botToken;
         private string logFilePath;
 
+        private PartialBiGraph botPartialBiGraph;
+
 
         public MyBot()
         {
+            
             SetUp();
         }
 
@@ -46,7 +49,8 @@ namespace lambhootDiscordBot
                 TokenType = TokenType.Bot,
                 UseInternalLogHandler = false
             });
-
+            Console.WriteLine("_Partial BiGraph_");
+            botPartialBiGraph = new PartialBiGraph(logFilePath);//closes the file when done
             file = new System.IO.StreamWriter(logFilePath, true);
 
             Run().GetAwaiter().GetResult();
@@ -111,6 +115,17 @@ namespace lambhootDiscordBot
                     await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave the poor man alone");
             }
 
+
+            //AI SPEAKING
+            DiscordUser possiblyBot = messageContainsUser(msgEvent.Message, lhBotId);
+            if (possiblyBot != null && msgEvent.MentionedUsers.Count() == 1)//only bot was mentioned
+            {
+                string newBiGraphSentence = botPartialBiGraph.generateNewSentence();
+                await msgEvent.Message.Respond(newBiGraphSentence);
+                return;//no logging of either of these messages
+            }
+
+
             //LAMBHOOT SPECIFIC COMMANDS
             if (msgEvent.Message.Author.ID == lambhootId)
             {
@@ -164,6 +179,21 @@ namespace lambhootDiscordBot
                     }
                     return;//so it doesn't log the log end
                 }
+
+                //RETRAIN AI
+                if (msgEvent.Message.Content.ToLower().Equals("retrain"))
+                {
+                    await msgEvent.Message.Respond("Retraining now ⏲️");
+                    if (logging)
+                        file.Close();
+                    botPartialBiGraph.retrain();
+                    if(logging)
+                        file = new System.IO.StreamWriter(logFilePath, true);
+                    await msgEvent.Message.Respond("Trained and ready to roll 😎");
+                    await msgEvent.Message.Respond("Test me!");
+                }
+
+
             }
 
             //logging

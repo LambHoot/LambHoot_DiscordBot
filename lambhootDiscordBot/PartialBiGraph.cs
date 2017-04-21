@@ -19,13 +19,36 @@ namespace lambhootDiscordBot
             SetUp();
         }
 
+        public PartialBiGraph(string filePath)
+        {
+            vocabulary = new Dictionary<string, Word>();
+            SetUp(filePath);
+        }
+
         public void SetUp()
         {
             Console.WriteLine("Training filepath: ");
             trainingFilePath = @"" + Console.ReadLine();
             file = new System.IO.StreamReader(trainingFilePath);
             buildVocabulary(file);
-            var x = vocabulary;
+            file.Close();
+        }
+
+        public void SetUp(string filePath)
+        {
+            trainingFilePath = @"" + filePath;
+            file = new System.IO.StreamReader(trainingFilePath);
+            buildVocabulary(file);
+            file.Close();
+        }
+
+        public void retrain()
+        {
+            vocabulary = new Dictionary<string, Word>();//RESET THE VOCABULARY DUH!
+            minSentenceLength = 1, maxSentenceLength = int.MinValue;//AND RESET MAX AND MIN LENGTHS
+            file = new System.IO.StreamReader(trainingFilePath);
+            buildVocabulary(file);
+            file.Close();
         }
 
         #region TextFile and sentence parsing
