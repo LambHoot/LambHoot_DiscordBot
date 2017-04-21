@@ -190,6 +190,7 @@ namespace lambhootDiscordBot
                         file = new System.IO.StreamWriter(logFilePath, true);
                     await msgEvent.Message.Respond("Trained and ready to roll 😎");
                     await msgEvent.Message.Respond("Test me!");
+                    return;//do not log this
                 }
 
 

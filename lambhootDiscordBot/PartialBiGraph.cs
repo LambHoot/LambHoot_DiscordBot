@@ -119,6 +119,7 @@ namespace lambhootDiscordBot
         {
             //build list of words
             List<Word> sentence = new List<Word>();
+            string returnString = "";
             int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength*0.6);
             sentence.Add(selectRandomWord());
 
@@ -126,20 +127,50 @@ namespace lambhootDiscordBot
             {
                 string newWordKey = sentence.Last().nextChosenWord();
                 if (newWordKey != null)
+                {
                     sentence.Add(vocabulary[newWordKey]);
-                else { 
-                    //possibly insert punctuation?
+                    returnString += " " + sentence.Last();
+                }
+                else
+                {
+                    if(!Char.IsPunctuation(returnString.Last()))
+                        returnString += ",";//add a comma to it since it failed, if the last character isn't already a punctuation
                     sentence.Add(selectRandomWord());
+                    returnString += " " + sentence.Last();
                 }
             }
-
-            //build string sentence
-            string returnString = "";
-            foreach (Word w in sentence)
-                returnString += w + " ";
+            returnString = formatSentence(returnString);
             Console.WriteLine("NEW SENTENCE: " + returnString);
             return returnString;
         }
+
+        #region sentence formatting
+
+        public string formatSentence(string sentence)
+        {
+            //remove white space at front
+            if (sentence.First().Equals(' '))
+                sentence = sentence.Remove(0, 1);
+
+            //recapitalize
+            string sentenceEnders = ".?!";
+            for(int i = 0; i < sentence.Count(); i++)
+            {
+                if(Char.IsLower(sentence[i]) && i > 2)
+                {
+                    if (sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2]))
+                    {
+                        sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
+                        sentence = sentence.Remove(i+1, 1);
+                    }
+                }
+            }
+
+
+            return sentence;
+        }
+
+        #endregion sentence formatting
 
 
         public Word selectRandomWord()
@@ -203,6 +234,8 @@ namespace lambhootDiscordBot
         public List<float> wordAfterProbList;//probabilities for each of the words in wordAfterList (value between 0/1)
         private float minWordAfterProb = 99, maxWordAfterProb = int.MinValue;
 
+        #region Word stuff
+
         public Word(string wordString)
         {
             this.wordString = wordString;
@@ -249,6 +282,8 @@ namespace lambhootDiscordBot
             }
         }
 
+        #endregion Word stuff
+
 
         //THE IMPORTANT HEURISTIC METHOD
         public string nextChosenWord()
@@ -256,14 +291,20 @@ namespace lambhootDiscordBot
             //returns a word of possible
             //otherwise returns null
             string returnString = null;
+            int maxLoopAttempts = 7;
 
             if (wordAfterList.Count() == 0)
                 return returnString;
-            
+
+            if (wordAfterList.Count() == 1 && (MyBot.randomDoubleRange(0, 100) > 50))
+            {
+                return returnString;
+            }
+
             int currentBestIndex = -1;
             float currentSmallestDifference = 99;
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < maxLoopAttempts; i++)
             {
                 //pick the wordAfter with probability greater and closest to prob
                 float prob = randomProbabilityForWord();
@@ -278,7 +319,6 @@ namespace lambhootDiscordBot
                             currentSmallestDifference = thisDifference;
                             currentBestIndex = j;
                         }
-
                 }
                 if (currentBestIndex != -1)
                 {
