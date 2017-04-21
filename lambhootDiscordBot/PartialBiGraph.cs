@@ -115,13 +115,34 @@ namespace lambhootDiscordBot
         #region Sentence Generation
 
         //GENERATE NEW SENTENCE
-        public string generateNewSentence()
+        public string generateNewSentence(string input = null)
         {
             //build list of words
             List<Word> sentence = new List<Word>();
             string returnString = "";
             int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength*0.6);
-            sentence.Add(selectRandomWord());
+
+            if (input == null)
+            {
+                sentence.Add(selectRandomWord());//start random generation
+                returnString += " " + sentence.Last();
+            }
+            else//handle starting sentence from input
+            {
+                string[] inputArray = input.Split(' ');
+                string inputWord = inputArray.Last();
+                if (!vocabulary.ContainsKey(inputWord))
+                    sentence.Add(selectRandomWord());//if not in vocab, just start random sentence
+                else
+                {
+                    for (int i = 0; i < inputArray.Count() - 1; i++)
+                        returnString += " " + inputArray[i];
+                    Word inputStartingWord = vocabulary[inputWord];
+                    sentence.Add(inputStartingWord);
+                    returnString += " " + sentence.Last();
+                }
+
+            }
 
             while (sentence.Count() < sentenceLength)
             {

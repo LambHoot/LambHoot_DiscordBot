@@ -120,7 +120,22 @@ namespace lambhootDiscordBot
             DiscordUser possiblyBot = messageContainsUser(msgEvent.Message, lhBotId);
             if (possiblyBot != null && msgEvent.MentionedUsers.Count() == 1)//only bot was mentioned
             {
-                string newBiGraphSentence = botPartialBiGram.generateNewSentence();
+                string newBiGraphSentence;
+                if (msgEvent.Message.Content.Contains("from:"))//user provided input
+                {
+                    string[] msgSplit = msgEvent.Message.Content.Split(new string[] { "from:" }, StringSplitOptions.None);
+
+                    string input = null;
+                    if (msgSplit.Count() > 0)
+                    {
+                        input = msgSplit.Last();
+                        newBiGraphSentence = botPartialBiGram.generateNewSentence(input);
+                        await msgEvent.Message.Respond(newBiGraphSentence);
+                        return;//no logging
+                    }//else, continue as normal
+                }
+
+                newBiGraphSentence = botPartialBiGram.generateNewSentence();
                 await msgEvent.Message.Respond(newBiGraphSentence);
                 return;//no logging of either of these messages
             }
