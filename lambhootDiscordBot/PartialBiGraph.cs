@@ -12,6 +12,7 @@ namespace lambhootDiscordBot
         private System.IO.StreamReader file;
         private string trainingFilePath;
         public static int minSentenceLength = 1, maxSentenceLength = int.MinValue;
+        public static float minVocabWordProb = 99, maxVocabWordProb = int.MinValue;
 
         public PartialBiGram()
         {
@@ -67,11 +68,16 @@ namespace lambhootDiscordBot
 
         public void addWordsFromLine(string line)
         {
+            if (String.IsNullOrWhiteSpace(line))//occured when users entered the Bee Movie Script
+                return;
             string[] stringWords = line.Split(' ');
             //updates maxSentenceLength
             maxSentenceLength = stringWords.Count() > maxSentenceLength ? stringWords.Count() : maxSentenceLength;
             for(int i = 0; i < stringWords.Count(); i++)
             {
+                if (String.IsNullOrWhiteSpace(stringWords[i]))//occured when users entered the Bee Movie Script
+                    return;//being extra cautious
+
                 if (vocabulary.ContainsKey(stringWords[i]))
                 {
                     //if the word is already there, increase it's count
@@ -95,6 +101,10 @@ namespace lambhootDiscordBot
             foreach (Word w in vocabulary.Values)
             {
                 w.wordProb = (float)w.getWordCount() / vocabulary.Count();
+                maxVocabWordProb = w.wordProb > maxVocabWordProb ? w.wordProb : maxVocabWordProb;
+                minVocabWordProb = w.wordProb < minVocabWordProb ? w.wordProb : minVocabWordProb;
+
+                //for word's own probabilities
                 w.processWordAfterProbabilities();
             }
         }
@@ -109,16 +119,18 @@ namespace lambhootDiscordBot
         {
             //build list of words
             List<Word> sentence = new List<Word>();
-            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength);
+            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength*0.6);
             sentence.Add(selectRandomWord());
 
-            while(sentence.Count() < sentenceLength)
+            while (sentence.Count() < sentenceLength)
             {
                 string newWordKey = sentence.Last().nextChosenWord();
                 if (newWordKey != null)
                     sentence.Add(vocabulary[newWordKey]);
-                else
+                else { 
+                    //possibly insert punctuation?
                     sentence.Add(selectRandomWord());
+                }
             }
 
             //build string sentence
@@ -143,7 +155,7 @@ namespace lambhootDiscordBot
             while (returnWord == null)
             {
                 //pick the word with probability greater and closest to prob
-                float prob = Word.randomProbability();
+                float prob = randomProbabilityForSentence();
                 for (int j = 0; j < vocabulary.Count(); j++)
                 {
                     float thisDifference = vocabulary.ElementAt(j).Value.wordProb - prob;
@@ -165,6 +177,12 @@ namespace lambhootDiscordBot
         }
 
 
+        public static float randomProbabilityForSentence()
+        {
+            float prob = (float)MyBot.randomDoubleRange(minVocabWordProb * 0.2, maxVocabWordProb * 1.2);
+            return prob;
+        }
+
 
         #endregion Sentence Generation
 
@@ -183,6 +201,7 @@ namespace lambhootDiscordBot
         public List<string> wordAfterList;//list of all words appearing immediately after this word
         public List<int> wordAfterCountList;//counts for the number of instances of the words in wordAfterList
         public List<float> wordAfterProbList;//probabilities for each of the words in wordAfterList (value between 0/1)
+        private float minWordAfterProb = 99, maxWordAfterProb = int.MinValue;
 
         public Word(string wordString)
         {
@@ -222,7 +241,12 @@ namespace lambhootDiscordBot
         {
             float totalWordAfterCount = wordAfterCountList.Sum();
             foreach (int count in wordAfterCountList)
-                wordAfterProbList.Add((float)count/totalWordAfterCount);
+            {
+                wordAfterProbList.Add((float)count / totalWordAfterCount);
+                float newProb = wordAfterProbList.Last();
+                maxWordAfterProb = newProb > maxWordAfterProb ? newProb : maxWordAfterProb;
+                minWordAfterProb = newProb < minWordAfterProb ? newProb : minWordAfterProb;
+            }
         }
 
 
@@ -242,7 +266,8 @@ namespace lambhootDiscordBot
             for (int i = 0; i < 5; i++)
             {
                 //pick the wordAfter with probability greater and closest to prob
-                float prob = randomProbability();
+                float prob = randomProbabilityForWord();
+                var x = this;
                 for (int j = 0; j < wordAfterProbList.Count(); j++)
                 {
                     float thisDifference = wordAfterProbList[j] - prob;
@@ -270,10 +295,10 @@ namespace lambhootDiscordBot
             return wordString;
         }
 
-        public static float randomProbability()
+        public float randomProbabilityForWord()
         {
-            float prob = (float)MyBot.randomDoubleRange(0.0, 100.0);
-            prob /= 100f;//I hate myself
+            float prob = (float)MyBot.randomDoubleRange(minWordAfterProb * 0.8, maxWordAfterProb * 1.2);
+            // 0.8 and 1.2 here because we want an even distribution of chance for the case that a word has only 1 wordAfter
             return prob;
         }
 
