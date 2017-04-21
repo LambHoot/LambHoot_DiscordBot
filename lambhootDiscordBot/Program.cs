@@ -14,7 +14,7 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
-            MyBot lambhootBot = new MyBot();
+            //MyBot lambhootBot = new MyBot();
 
         }
 
