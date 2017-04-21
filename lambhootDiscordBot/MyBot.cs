@@ -20,7 +20,7 @@ namespace lambhootDiscordBot
         private string botToken;
         private string logFilePath;
 
-        private PartialBiGraph botPartialBiGraph;
+        private PartialBiGram botPartialBiGram;
 
 
         public MyBot()
@@ -50,7 +50,7 @@ namespace lambhootDiscordBot
                 UseInternalLogHandler = false
             });
             Console.WriteLine("_Partial BiGraph_");
-            botPartialBiGraph = new PartialBiGraph(logFilePath);//closes the file when done
+            botPartialBiGram = new PartialBiGram(logFilePath);//closes the file when done
             file = new System.IO.StreamWriter(logFilePath, true);
 
             Run().GetAwaiter().GetResult();
@@ -120,7 +120,7 @@ namespace lambhootDiscordBot
             DiscordUser possiblyBot = messageContainsUser(msgEvent.Message, lhBotId);
             if (possiblyBot != null && msgEvent.MentionedUsers.Count() == 1)//only bot was mentioned
             {
-                string newBiGraphSentence = botPartialBiGraph.generateNewSentence();
+                string newBiGraphSentence = botPartialBiGram.generateNewSentence();
                 await msgEvent.Message.Respond(newBiGraphSentence);
                 return;//no logging of either of these messages
             }
@@ -185,7 +185,7 @@ namespace lambhootDiscordBot
                 {
                     await msgEvent.Message.Respond("Retraining now ⏲️");
                     file.Close();
-                    botPartialBiGraph.retrain();
+                    botPartialBiGram.retrain();
                     if(logging)
                         file = new System.IO.StreamWriter(logFilePath, true);
                     await msgEvent.Message.Respond("Trained and ready to roll 😎");

@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 
 namespace lambhootDiscordBot
 {
-    class PartialBiGraph
+    class PartialBiGram
     {
         public Dictionary<string, Word> vocabulary;
         private System.IO.StreamReader file;
         private string trainingFilePath;
         public static int minSentenceLength = 1, maxSentenceLength = int.MinValue;
 
-        public PartialBiGraph()
+        public PartialBiGram()
         {
             vocabulary = new Dictionary<string, Word>();
             SetUp();
         }
 
-        public PartialBiGraph(string filePath)
+        public PartialBiGram(string filePath)
         {
             vocabulary = new Dictionary<string, Word>();
             SetUp(filePath);
