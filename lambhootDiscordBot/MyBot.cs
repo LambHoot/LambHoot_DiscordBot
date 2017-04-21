@@ -184,8 +184,7 @@ namespace lambhootDiscordBot
                 if (msgEvent.Message.Content.ToLower().Equals("retrain"))
                 {
                     await msgEvent.Message.Respond("Retraining now ⏲️");
-                    if (logging)
-                        file.Close();
+                    file.Close();
                     botPartialBiGraph.retrain();
                     if(logging)
                         file = new System.IO.StreamWriter(logFilePath, true);
