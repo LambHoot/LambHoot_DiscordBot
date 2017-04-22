@@ -126,7 +126,7 @@ namespace lambhootDiscordBot
 
             if (input == null)
             {
-                sentence.Add(selectRandomWord());//start random generation
+                sentence.Add(selectVocabularyWord());//start random generation
                 returnString += " " + sentence.Last();
             }
             else//handle starting sentence from input
@@ -134,7 +134,7 @@ namespace lambhootDiscordBot
                 string[] inputArray = input.Split(' ');
                 string inputWord = inputArray.Last();
                 if (!vocabulary.ContainsKey(inputWord))
-                    sentence.Add(selectRandomWord());//if not in vocab, just start random sentence
+                    sentence.Add(selectVocabularyWord());//if not in vocab, just start random sentence
                 else
                 {
                     for (int i = 0; i < inputArray.Count() - 1; i++)
@@ -164,9 +164,9 @@ namespace lambhootDiscordBot
                         Word nextWord = null;
                         while (nextWord == null)
                         {
-                            nextWord = selectRandomWord();
+                            nextWord = selectVocabularyWord();
                         }
-                        sentence.Add(selectRandomWord());
+                        sentence.Add(selectVocabularyWord());
                         returnString += " " + sentence.Last();
                     }
                 }
@@ -228,9 +228,9 @@ namespace lambhootDiscordBot
                     Word nextWord = null;
                     while (nextWord == null)
                     {
-                        nextWord = selectRandomWord();
+                        nextWord = selectVocabularyWord();
                     }
-                    sentence.Add(selectRandomWord());
+                    sentence.Add(selectVocabularyWord());
                     returnString += " " + sentence.Last();
                 }
             }
@@ -255,7 +255,7 @@ namespace lambhootDiscordBot
             {
                 if(Char.IsLower(sentence[i]) && i > 2)
                 {
-                    if (sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2]))
+                    if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
                     {
                         sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
                         sentence = sentence.Remove(i+1, 1);
@@ -270,7 +270,7 @@ namespace lambhootDiscordBot
         #endregion sentence formatting
 
 
-        public Word selectRandomWord()
+        public Word selectVocabularyWord()
         {
             Word returnWord = null;
 
@@ -304,6 +304,11 @@ namespace lambhootDiscordBot
             return returnWord;
         }
 
+        public Word selectRandomWord()
+        {
+            int index = (int)MyBot.randomDoubleRange(0, vocabulary.Count());
+            return vocabulary.ElementAt(index).Value;
+        }
 
         public static float randomProbabilityForSentence()
         {
