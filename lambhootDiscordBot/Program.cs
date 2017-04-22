@@ -14,7 +14,7 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("_LambHoot Discord Bot v1.1_");
+            Console.WriteLine("_LambHoot Discord Bot v1.2_");
 
             Console.WriteLine("_Discord Bot_");
             MyBot lambhootBot = new MyBot();
@@ -22,19 +22,19 @@ namespace lambhootDiscordBot
             //Console.WriteLine("_Partial BiGram_");
             //PartialBiGram myPartialBiGram = new PartialBiGram();
 
-            //string s1 = myPartialBiGram.generateNewSentence("review");
+            //string s1 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit");
             //Console.WriteLine("_____");
-            //string s2 = myPartialBiGram.generateNewSentence("review");
+            //string s2 = myPartialBiGram.generateNewBiGramSentence("astrology is");
             //Console.WriteLine("_____");
-            //string s3 = myPartialBiGram.generateNewSentence("review");
+            //string s3 = myPartialBiGram.generateNewBiGramSentence("Denis is a fucking");
             //Console.WriteLine("_____");
-            //string s4 = myPartialBiGram.generateNewSentence("review");
+            //string s4 = myPartialBiGram.generateNewBiGramSentence("applesauce");
             //Console.WriteLine("_____");
-            //string s5 = myPartialBiGram.generateNewSentence("review");
+            //string s5 = myPartialBiGram.generateNewBiGramSentence();
             //Console.WriteLine("_____");
-            //string s6 = myPartialBiGram.generateNewSentence("review");
+            //string s6 = myPartialBiGram.generateNewBiGramSentence();
             //Console.WriteLine("_____");
-            //string s7 = myPartialBiGram.generateNewSentence("review");
+            //string s7 = myPartialBiGram.generateNewBiGramSentence();
 
             //var x = 0;
 

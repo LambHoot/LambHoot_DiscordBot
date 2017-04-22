@@ -18,14 +18,12 @@ namespace lambhootDiscordBot
 
         private DiscordClient discord;
         private string botToken;
-        private string logFilePath;
+        private string logFilePath, shakespeareFilePath;
 
-        private PartialBiGram botPartialBiGram;
-
+        private PartialBiGram botPartialBiGram, shakespeareGram;
 
         public MyBot()
         {
-            
             SetUp();
         }
 
@@ -38,6 +36,8 @@ namespace lambhootDiscordBot
             botToken = Console.ReadLine();
             Console.WriteLine("Log filepath: ");
             logFilePath = @""+Console.ReadLine();
+            Console.WriteLine("Shakespear filepath: ");
+            shakespeareFilePath = @"" + Console.ReadLine();
 
             discord = new DiscordClient(new DiscordConfig
             {
@@ -49,8 +49,10 @@ namespace lambhootDiscordBot
                 TokenType = TokenType.Bot,
                 UseInternalLogHandler = false
             });
-            Console.WriteLine("_Partial BiGraph_");
+            Console.WriteLine("_Partial BiGram_");
             botPartialBiGram = new PartialBiGram(logFilePath);//closes the file when done
+            Console.WriteLine("_Shakespear BiGram_");
+            shakespeareGram = new PartialBiGram(shakespeareFilePath);//closes the file when done
             file = new System.IO.StreamWriter(logFilePath, true);
 
             Run().GetAwaiter().GetResult();
@@ -129,13 +131,20 @@ namespace lambhootDiscordBot
                     if (msgSplit.Count() > 0)
                     {
                         input = msgSplit.Last();
-                        newBiGraphSentence = botPartialBiGram.generateNewSentence(input);
+                        newBiGraphSentence = botPartialBiGram.generateNewBiGramSentence(input);
                         await msgEvent.Message.Respond(newBiGraphSentence);
                         return;//no logging
                     }//else, continue as normal
                 }
 
-                newBiGraphSentence = botPartialBiGram.generateNewSentence();
+                if (msgEvent.Message.Content.ToLower().Contains("shakespeare"))
+                {
+                    string shakespearSentence = shakespeareGram.generateNewBiGramSentence();
+                    await msgEvent.Message.Respond(shakespearSentence);
+                    return;//don't log
+                }
+
+                newBiGraphSentence = botPartialBiGram.generateNewBiGramSentence();
                 await msgEvent.Message.Respond(newBiGraphSentence);
                 return;//no logging of either of these messages
             }
