@@ -192,7 +192,20 @@ namespace lambhootDiscordBot
             }
             else
             {
-                //make it choose a good word from the input if possible
+                //TODO: make it choose a good word from the input if possible
+                string[] inputArray = input.Split(' ');
+                string inputWord = inputArray.Last();
+
+                    for (int i = 0; i < inputArray.Count(); i++)
+                    {
+                        if (vocabulary.ContainsKey(inputArray[i]))
+                        {
+                            sentence.Add(vocabulary[inputArray[i]]);
+                        }
+                        else
+                            sentence.Add(new Word(inputArray[i]));
+                        returnString += " " + sentence.Last();
+                    }
             }
 
             //loop to build sentence
@@ -210,9 +223,6 @@ namespace lambhootDiscordBot
                     }
                     
                 }
-                var x = currentBestProb;
-                var y = currentBestIndex;
-
                 //now add the word found
                 if (currentBestIndex > 0)//it found a word other than the first default one
                 {
