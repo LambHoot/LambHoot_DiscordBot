@@ -181,7 +181,7 @@ namespace lambhootDiscordBot
         {
             List<Word> sentence = new List<Word>();
             string returnString = "";
-            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength * 0.6);
+            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, Math.Min(maxSentenceLength * 0.6, 25));
 
             //input handle
             if (input == null)
@@ -238,9 +238,9 @@ namespace lambhootDiscordBot
                     Word nextWord = null;
                     while (nextWord == null)
                     {
-                        nextWord = selectVocabularyWord();
+                        nextWord = selectRandomWord();
                     }
-                    sentence.Add(selectVocabularyWord());
+                    sentence.Add(nextWord);
                     returnString += " " + sentence.Last();
                 }
             }
