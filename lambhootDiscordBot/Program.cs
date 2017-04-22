@@ -14,29 +14,29 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("_LambHoot Discord Bot v1.1_");
+            Console.WriteLine("_LambHoot Discord Bot v1.2_");
 
-            Console.WriteLine("_Discord Bot_");
-            MyBot lambhootBot = new MyBot();
+            //Console.WriteLine("_Discord Bot_");
+            //MyBot lambhootBot = new MyBot();
 
-            //Console.WriteLine("_Partial BiGram_");
-            //PartialBiGram myPartialBiGram = new PartialBiGram();
+            Console.WriteLine("_Partial BiGram_");
+            PartialBiGram myPartialBiGram = new PartialBiGram();
 
-            //string s1 = myPartialBiGram.generateNewSentence("review");
-            //Console.WriteLine("_____");
-            //string s2 = myPartialBiGram.generateNewSentence("review");
-            //Console.WriteLine("_____");
-            //string s3 = myPartialBiGram.generateNewSentence("review");
-            //Console.WriteLine("_____");
-            //string s4 = myPartialBiGram.generateNewSentence("review");
-            //Console.WriteLine("_____");
-            //string s5 = myPartialBiGram.generateNewSentence("review");
-            //Console.WriteLine("_____");
-            //string s6 = myPartialBiGram.generateNewSentence("review");
-            //Console.WriteLine("_____");
-            //string s7 = myPartialBiGram.generateNewSentence("review");
+            string s1 = myPartialBiGram.generateNewBiGramSentence();
+            Console.WriteLine("_____");
+            string s2 = myPartialBiGram.generateNewBiGramSentence();
+            Console.WriteLine("_____");
+            string s3 = myPartialBiGram.generateNewBiGramSentence();
+            Console.WriteLine("_____");
+            string s4 = myPartialBiGram.generateNewBiGramSentence();
+            Console.WriteLine("_____");
+            string s5 = myPartialBiGram.generateNewBiGramSentence();
+            Console.WriteLine("_____");
+            string s6 = myPartialBiGram.generateNewBiGramSentence();
+            Console.WriteLine("_____");
+            string s7 = myPartialBiGram.generateNewBiGramSentence();
 
-            //var x = 0;
+            var x = 0;
 
         }
 

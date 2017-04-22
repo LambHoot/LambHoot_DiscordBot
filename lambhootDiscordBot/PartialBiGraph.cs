@@ -33,6 +33,7 @@ namespace lambhootDiscordBot
             file = new System.IO.StreamReader(trainingFilePath);
             buildVocabulary(file);
             file.Close();
+            var x = vocabulary;
         }
 
         public void SetUp(string filePath)
@@ -53,7 +54,7 @@ namespace lambhootDiscordBot
             file.Close();
         }
 
-        #region TextFile and sentence parsing
+        #region TextFile and Sentence Parsing
 
         public void buildVocabulary(System.IO.StreamReader reader)
         {
@@ -82,16 +83,17 @@ namespace lambhootDiscordBot
                 {
                     //if the word is already there, increase it's count
                     vocabulary[stringWords[i]].addWordCount();
-                    
                 }
                 else
                 {
                     //otherwise add it to the vocab
                     vocabulary.Add(stringWords[i], new Word(stringWords[i]));
                 }
-                //add the wordAfter if possible
+                //add the wordAfters if possible
                 if (i + 1 < stringWords.Count())
                     vocabulary[stringWords[i]].addWordAfter(stringWords[i + 1]);
+                if (i + 2 < stringWords.Count())
+                    vocabulary[stringWords[i]].addWordAfter(stringWords[i + 2], 2);
             }
         }
 
@@ -159,6 +161,11 @@ namespace lambhootDiscordBot
                         if (!Char.IsPunctuation(returnString.Last()))
                             returnString += (MyBot.randomDoubleRange(0, 100) > 50) ? "," : ".";
                         //add a comma or period to it since it failed, if the last character isn't already a punctuation
+                        Word nextWord = null;
+                        while (nextWord == null)
+                        {
+                            nextWord = selectRandomWord();
+                        }
                         sentence.Add(selectRandomWord());
                         returnString += " " + sentence.Last();
                     }
@@ -168,6 +175,71 @@ namespace lambhootDiscordBot
             Console.WriteLine("NEW SENTENCE: " + returnString);
             return returnString;
         }
+
+
+        public string generateNewBiGramSentence(string input = null)
+        {
+            List<Word> sentence = new List<Word>();
+            string returnString = "";
+            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, maxSentenceLength * 0.6);
+
+            //input handle
+            if (input == null)
+            {
+                //choose first word
+                sentence.Add(selectRandomWord());
+                returnString += " " + sentence.Last();
+            }
+            else
+            {
+                //make it choose a good word from the input if possible
+            }
+
+            //loop to build sentence
+            while (sentence.Count() < sentenceLength)
+            {
+                int currentBestIndex = 0;
+                float currentBestProb = float.MinValue;
+                for (int i = 0; i < vocabulary.Count(); i++)
+                {
+                    float newProb = vocabulary.ElementAt(i).Value.probabilityGivenSentence(sentence);
+                    if (newProb > currentBestProb)
+                    {
+                        currentBestProb = newProb;
+                        currentBestIndex = i;
+                    }
+                    
+                }
+                var x = currentBestProb;
+                var y = currentBestIndex;
+
+                //now add the word found
+                if (currentBestIndex > 0)//it found a word other than the first default one
+                {
+                    sentence.Add(vocabulary.ElementAt(currentBestIndex).Value);
+                    returnString += " " + sentence.Last();
+                }
+                else
+                {
+                    //it failed to find a proper word. add punctuation if necessary and choose new random word
+                    if (!Char.IsPunctuation(returnString.Last()))
+                        returnString += (MyBot.randomDoubleRange(0, 100) > 50) ? "," : ".";
+                    //add a comma or period to it since it failed, if the last character isn't already a punctuation
+                    Word nextWord = null;
+                    while (nextWord == null)
+                    {
+                        nextWord = selectRandomWord();
+                    }
+                    sentence.Add(selectRandomWord());
+                    returnString += " " + sentence.Last();
+                }
+            }
+            //sentence cleanup
+            returnString = formatSentence(returnString);
+            Console.WriteLine("NEW BAYES SENTENCE: " + returnString);
+            return returnString;
+        }
+
 
         #region sentence formatting
 
@@ -241,134 +313,7 @@ namespace lambhootDiscordBot
 
 
         #endregion Sentence Generation
-
-
     }
 
-
-
-    #region Word Class
-
-    public class Word
-    {
-        public string wordString;
-        private int wordCount;//the number of instances of this word in the training set, its importance in the vocabulary
-        public float wordProb;//the count of this word / total vocabulary size
-        public List<string> wordAfterList;//list of all words appearing immediately after this word
-        public List<int> wordAfterCountList;//counts for the number of instances of the words in wordAfterList
-        public List<float> wordAfterProbList;//probabilities for each of the words in wordAfterList (value between 0/1)
-        private float minWordAfterProb = 99, maxWordAfterProb = int.MinValue;
-
-        #region Word stuff
-
-        public Word(string wordString)
-        {
-            this.wordString = wordString;
-            wordCount = 1;
-            wordAfterList = new List<string>();
-            wordAfterCountList = new List<int>();
-            wordAfterProbList = new List<float>();
-        }
-
-        public void addWordCount()
-        {
-            wordCount++;
-        }
-
-        public int getWordCount()
-        {
-            return wordCount;
-        }
-
-        public void addWordAfter(string wordAfter)
-        {
-            int index = wordAfterList.IndexOf(wordAfter);
-            if (index != -1)//wordAfter already stored
-            {
-                wordAfterCountList[index] += 1;//increase the count
-            }
-            else//wordAfter is new
-            {
-                wordAfterList.Add(wordAfter);
-                wordAfterCountList.Add(1);
-            }
-        }
-
-        //is called when all wordAfters are added and the wordAfterProbList is still empty
-        public void processWordAfterProbabilities()
-        {
-            float totalWordAfterCount = wordAfterCountList.Sum();
-            foreach (int count in wordAfterCountList)
-            {
-                wordAfterProbList.Add((float)count / totalWordAfterCount);
-                float newProb = wordAfterProbList.Last();
-                maxWordAfterProb = newProb > maxWordAfterProb ? newProb : maxWordAfterProb;
-                minWordAfterProb = newProb < minWordAfterProb ? newProb : minWordAfterProb;
-            }
-        }
-
-        #endregion Word stuff
-
-
-        //THE IMPORTANT HEURISTIC METHOD
-        public string nextChosenWord()
-        {
-            //returns a word of possible
-            //otherwise returns null
-            string returnString = null;
-            int maxLoopAttempts = 7;
-
-            if (wordAfterList.Count() == 0)
-                return returnString;
-
-            if (wordAfterList.Count() == 1 && (MyBot.randomDoubleRange(0, 100) > 50))
-            {
-                return returnString;
-            }
-
-            int currentBestIndex = -1;
-            float currentSmallestDifference = 99;
-
-            for (int i = 0; i < maxLoopAttempts; i++)
-            {
-                //pick the wordAfter with probability greater and closest to prob
-                float prob = randomProbabilityForWord();
-                var x = this;
-                for (int j = 0; j < wordAfterProbList.Count(); j++)
-                {
-                    float thisDifference = wordAfterProbList[j] - prob;
-                    if (thisDifference < 0)//if lower, ignore
-                        continue;
-                        if (thisDifference < currentSmallestDifference)
-                        {
-                            currentSmallestDifference = thisDifference;
-                            currentBestIndex = j;
-                        }
-                }
-                if (currentBestIndex != -1)
-                {
-                    returnString = wordAfterList[currentBestIndex];
-                    break;
-                }
-            }
-            return returnString;
-        }
-
-
-        public override string ToString()
-        {
-            return wordString;
-        }
-
-        public float randomProbabilityForWord()
-        {
-            float prob = (float)MyBot.randomDoubleRange(minWordAfterProb * 0.8, maxWordAfterProb * 1.2);
-            // 0.8 and 1.2 here because we want an even distribution of chance for the case that a word has only 1 wordAfter
-            return prob;
-        }
-
-    }
-
-    #endregion Word Class
 
 }
