@@ -21,6 +21,12 @@ namespace lambhootDiscordBot
 
             Console.WriteLine("_Partial BiGram_");
             PartialBiGram myPartialBiGram = new PartialBiGram();
+            Console.WriteLine("vocab done");
+
+            List<Word> sentence = new List<Word>();
+            sentence.Add(new Word("holy shit"));
+            var p = myPartialBiGram.vocabulary["happening?"].probabilityGivenSentence(sentence);
+            var pp = myPartialBiGram.vocabulary["happening?"].ProbabilityOfWordgivenB(myPartialBiGram.vocabulary["shit"], 3);
 
 
             string s0 = myPartialBiGram.generateNewBiGramSentence("holy shit");
@@ -31,9 +37,9 @@ namespace lambhootDiscordBot
             Console.WriteLine("_____");
             string s3 = myPartialBiGram.generateNewBiGramSentence("Denis is a fucking");
             Console.WriteLine("_____");
-            string s4 = myPartialBiGram.generateNewBiGramSentence("applesauce");
+            string s4 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit happening? Preording the them? turn");
             Console.WriteLine("_____");
-            string s5 = myPartialBiGram.generateNewBiGramSentence();
+            string s5 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit happening? Preording the them? turn.");
             Console.WriteLine("_____");
             string s6 = myPartialBiGram.generateNewBiGramSentence();
             Console.WriteLine("_____");

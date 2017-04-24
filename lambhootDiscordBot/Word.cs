@@ -158,7 +158,7 @@ namespace lambhootDiscordBot
             //add all conditional probs to a list
             for(int i = 0; i < currentSentence.Count(); i++)
             {
-                float probForThisWord = this.ProbabilityOfWordgivenB(currentSentence[i], currentSentence.Count());
+                float probForThisWord = this.ProbabilityOfWordgivenB(currentSentence[i], currentSentence.Count() - (i+1));
                 probsList.Add(probForThisWord);
                 for(int j = i+1; j+1 < currentSentence.Count(); j++)
                 {
@@ -174,7 +174,7 @@ namespace lambhootDiscordBot
             {
                 nextWordProb += myLog(p);
             }
-            return nextWordProb;
+            return nextWordProb += this.wordProb;
         }
 
 
