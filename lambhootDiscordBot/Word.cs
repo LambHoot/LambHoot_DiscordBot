@@ -63,13 +63,17 @@ namespace lambhootDiscordBot
 
         public void addWordAfter(string wordAfter, int gramNumber = 0)
         {
-            int index = wordAfterLists[gramNumber].FindIndex((WordAfter w) => { return w.wordString == wordAfter; });
+            int index = -1;
+            if (wordAfterLists.Count() - 1 >= gramNumber)//if the gram exists yet
+                index = wordAfterLists[gramNumber].FindIndex((WordAfter w) => { return w.wordString == wordAfter; });
             if (index != -1)//wordAfter already stored
             {
                 wordAfterLists[gramNumber][index].count++;//increase the count
             }
             else//wordAfter is new
             {
+                if (wordAfterLists.Count() - 1 < gramNumber)
+                    wordAfterLists.Add(new List<WordAfter>());
                 wordAfterLists[gramNumber].Add(new WordAfter(wordAfter, gramNumber));
             }
         }
@@ -88,9 +92,9 @@ namespace lambhootDiscordBot
                 {
                     float newProb = wa.updateProb(totalWordAfterCount);
                     if (newProb < minWordAfterProbList.Last())
-                        minWordAfterProbList[minWordAfterProbList.Count()] = newProb;
+                        minWordAfterProbList[minWordAfterProbList.Count()-1] = newProb;
                     if (newProb > minWordAfterProbList.Last())
-                        maxWordAfterProbList[maxWordAfterProbList.Count()] = newProb;
+                        maxWordAfterProbList[maxWordAfterProbList.Count()-1] = newProb;
                 }
                 //this is less optimal now, possibly, depending on how List.Sum() works
             }
@@ -144,34 +148,31 @@ namespace lambhootDiscordBot
         }
 
 
-        //USING FULL PARTIAL BIGRAPH AND BAYESIAN PROBABILITY
+        //USING FULL PARTIAL NGRAM AND BAYESIAN PROBABILITY
         public float probabilityGivenSentence(List<Word> currentSentence)
         {
             //returns a probability
             float nextWordProb = 0;
+            List<float> probsList = new List<float>();
 
-            //special case, first word or second word
-            if (!(currentSentence.Count() < 1))
+            //add all conditional probs to a list
+            for(int i = 0; i < currentSentence.Count(); i++)
             {
-                //calculate conditional probabilities of all words in vocab given these two words
-                //pick the word with the best probability
-                Word wordB = currentSentence[currentSentence.Count() - 1];
-                if (currentSentence.Count() == 1)
+                Word word1 = new Word("");
+                Word word2 = new Word("");
+                if (i + 1 < currentSentence.Count())
                 {
-                    //RETURNS INFINITY!
-                    float x = this.ProbabilityOfWordgivenB(wordB);
-                    double y = Math.Log(x);
-                    float z = (float)Math.Abs(y);
-
-                    nextWordProb = myLog(this.ProbabilityOfWordgivenB(wordB));
+                    word1 = currentSentence[i];
+                    word2 = currentSentence[i + 1];
                 }
-                else if (currentSentence.Count() > 1)
-                {
-                    Word wordBB = currentSentence[currentSentence.Count() - 2];
-                    nextWordProb = myLog(this.ProbabilityOfWordgivenB(wordB)) + myLog(wordB.ProbabilityOfWordgivenB(wordBB));
-                }
+                probsList.Add(word2.ProbabilityOfWordgivenB(word1, i));
             }
-            //RETURNS INFINITY!
+
+            //sum logs of all probs
+            foreach (float p in probsList)
+            {
+                nextWordProb += myLog(p);
+            }
             return nextWordProb;
         }
 
@@ -179,10 +180,13 @@ namespace lambhootDiscordBot
         private float getProbabilityOfWordAfter(string word, int gn = 0)
         {
             float wordAfterProb = 0;
-            int index = wordAfterLists[gn].FindIndex((WordAfter w) => { return w.wordString == word; });
-            if (index != -1)
+            if (wordAfterLists.Count() > gn)
             {
-                wordAfterProb = wordAfterLists[gn][index].prob;
+                int index = wordAfterLists[gn].FindIndex((WordAfter w) => { return w.wordString == word; });
+                if (index != -1)
+                {
+                    wordAfterProb = wordAfterLists[gn][index].prob;
+                }
             }
             return wordAfterProb;
         }
@@ -201,9 +205,9 @@ namespace lambhootDiscordBot
             return prob;
         }
 
-        public float ProbabilityOfWordgivenB(Word b)
+        public float ProbabilityOfWordgivenB(Word b, int gn = 0)
         {
-            float numerator = (b.getProbabilityOfWordAfter(wordString) * wordProb);
+            float numerator = (b.getProbabilityOfWordAfter(wordString, gn) * wordProb);
             if (numerator == 0f || wordString.Equals(b.wordString))//if they are independent variables or they are the same, probability is done differently
                 return 0f;
             float prob = numerator / b.wordProb;

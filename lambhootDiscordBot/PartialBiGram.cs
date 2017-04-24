@@ -90,10 +90,11 @@ namespace lambhootDiscordBot
                     vocabulary.Add(stringWords[i], new Word(stringWords[i]));
                 }
                 //add the wordAfters if possible
-                if (i + 1 < stringWords.Count())
-                    vocabulary[stringWords[i]].addWordAfter(stringWords[i + 1]);
-                if (i + 2 < stringWords.Count())
-                    vocabulary[stringWords[i]].addWordAfter(stringWords[i + 2], 2);
+
+                for(int j = i+1; j < stringWords.Count(); j++)
+                {
+                    vocabulary[stringWords[i]].addWordAfter(stringWords[j], j-(i+1));//j-original j) gives the correct gram number
+                }    
             }
         }
 
