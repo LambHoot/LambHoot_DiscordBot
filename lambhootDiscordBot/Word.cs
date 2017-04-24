@@ -93,7 +93,7 @@ namespace lambhootDiscordBot
                     float newProb = wa.updateProb(totalWordAfterCount);
                     if (newProb < minWordAfterProbList.Last())
                         minWordAfterProbList[minWordAfterProbList.Count()-1] = newProb;
-                    if (newProb > minWordAfterProbList.Last())
+                    if (newProb > maxWordAfterProbList.Last())
                         maxWordAfterProbList[maxWordAfterProbList.Count()-1] = newProb;
                 }
                 //this is less optimal now, possibly, depending on how List.Sum() works
@@ -158,14 +158,15 @@ namespace lambhootDiscordBot
             //add all conditional probs to a list
             for(int i = 0; i < currentSentence.Count(); i++)
             {
-                Word word1 = new Word("");
-                Word word2 = new Word("");
-                if (i + 1 < currentSentence.Count())
+                float probForThisWord = this.ProbabilityOfWordgivenB(currentSentence[i], currentSentence.Count());
+                probsList.Add(probForThisWord);
+                for(int j = i+1; j+1 < currentSentence.Count(); j++)
                 {
-                    word1 = currentSentence[i];
-                    word2 = currentSentence[i + 1];
+                    Word word1 = currentSentence[i];
+                    Word word2 = currentSentence[j];
+                    float probForSentenceWords = word2.ProbabilityOfWordgivenB(word1, j-(i+1));
+                    probsList.Add(probForSentenceWords);
                 }
-                probsList.Add(word2.ProbabilityOfWordgivenB(word1, i));
             }
 
             //sum logs of all probs

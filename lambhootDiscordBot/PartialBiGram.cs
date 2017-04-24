@@ -65,6 +65,7 @@ namespace lambhootDiscordBot
             }
             //update probs
             processProbabilities();
+            var x = vocabulary;
         }
 
         public void addWordsFromLine(string line)
@@ -197,16 +198,16 @@ namespace lambhootDiscordBot
                 string[] inputArray = input.Split(' ');
                 string inputWord = inputArray.Last();
 
-                    for (int i = 0; i < inputArray.Count(); i++)
+                for (int i = 0; i < inputArray.Count(); i++)
+                {
+                    if (vocabulary.ContainsKey(inputArray[i]))
                     {
-                        if (vocabulary.ContainsKey(inputArray[i]))
-                        {
-                            sentence.Add(vocabulary[inputArray[i]]);
-                        }
-                        else
-                            sentence.Add(new Word(inputArray[i]));
-                        returnString += " " + sentence.Last();
+                        sentence.Add(vocabulary[inputArray[i]]);
                     }
+                    else
+                        sentence.Add(new Word(inputArray[i]));
+                    returnString += " " + sentence.Last();
+                }
             }
 
             //loop to build sentence
@@ -222,7 +223,6 @@ namespace lambhootDiscordBot
                         currentBestProb = newProb;
                         currentBestIndex = i;
                     }
-                    
                 }
                 //now add the word found
                 if (currentBestIndex > 0)//it found a word other than the first default one

@@ -22,6 +22,9 @@ namespace lambhootDiscordBot
             Console.WriteLine("_Partial BiGram_");
             PartialBiGram myPartialBiGram = new PartialBiGram();
 
+
+            string s0 = myPartialBiGram.generateNewBiGramSentence("holy shit");
+            Console.WriteLine("_____");
             string s1 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit");
             Console.WriteLine("_____");
             string s2 = myPartialBiGram.generateNewBiGramSentence("astrology is");
