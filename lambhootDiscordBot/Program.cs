@@ -16,36 +16,30 @@ namespace lambhootDiscordBot
         {
             Console.WriteLine("_LambHoot Discord Bot v1.3 Full nGram_");
 
-            //Console.WriteLine("_Discord Bot_");
-            //MyBot lambhootBot = new MyBot();
+            Console.WriteLine("_Discord Bot_");
+            MyBot lambhootBot = new MyBot();
 
-            Console.WriteLine("_Partial BiGram_");
-            PartialBiGram myPartialBiGram = new PartialBiGram();
-            Console.WriteLine("vocab done");
+            //Console.WriteLine("_Partial BiGram_");
+            //PartialBiGram myPartialBiGram = new PartialBiGram();
+            //Console.WriteLine("_vocab done_");
 
-            List<Word> sentence = new List<Word>();
-            sentence.Add(new Word("holy shit"));
-            var p = myPartialBiGram.vocabulary["happening?"].probabilityGivenSentence(sentence);
-            var pp = myPartialBiGram.vocabulary["happening?"].ProbabilityOfWordgivenB(myPartialBiGram.vocabulary["shit"], 3);
+            //string s0 = myPartialBiGram.generateNewBiGramSentence("What a great day to");
+            //Console.WriteLine("_____");
+            //string s1 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit");
+            //Console.WriteLine("_____");
+            //string s2 = myPartialBiGram.generateNewBiGramSentence("astrology is");
+            //Console.WriteLine("_____");
+            //string s3 = myPartialBiGram.generateNewBiGramSentence("Denis is");
+            //Console.WriteLine("_____");
+            //string s4 = myPartialBiGram.generateNewBiGramSentence();
+            //Console.WriteLine("_____");
+            //string s5 = myPartialBiGram.generateNewBiGramSentence();
+            //Console.WriteLine("_____");
+            //string s6 = myPartialBiGram.generateNewBiGramSentence();
+            //Console.WriteLine("_____");
+            //string s7 = myPartialBiGram.generateNewBiGramSentence();
 
-
-            string s0 = myPartialBiGram.generateNewBiGramSentence("holy shit");
-            Console.WriteLine("_____");
-            string s1 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit");
-            Console.WriteLine("_____");
-            string s2 = myPartialBiGram.generateNewBiGramSentence("astrology is");
-            Console.WriteLine("_____");
-            string s3 = myPartialBiGram.generateNewBiGramSentence("Denis is a fucking");
-            Console.WriteLine("_____");
-            string s4 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit happening? Preording the them? turn");
-            Console.WriteLine("_____");
-            string s5 = myPartialBiGram.generateNewBiGramSentence("holy fucking shit happening? Preording the them? turn.");
-            Console.WriteLine("_____");
-            string s6 = myPartialBiGram.generateNewBiGramSentence();
-            Console.WriteLine("_____");
-            string s7 = myPartialBiGram.generateNewBiGramSentence();
-
-            var x = 0;
+            //var x = 0;
 
         }
 
