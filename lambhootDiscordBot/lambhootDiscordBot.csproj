@@ -126,7 +126,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MyBot.cs" />
-    <Compile Include="PartialBiGraph.cs" />
+    <Compile Include="PartialBiGram.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Word.cs" />
