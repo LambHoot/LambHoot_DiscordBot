@@ -13,6 +13,7 @@ namespace lambhootDiscordBot
         private string trainingFilePath;
         public static int minSentenceLength = 1, maxSentenceLength = int.MinValue;
         public static float minVocabWordProb = 99, maxVocabWordProb = int.MinValue;
+        public static int maxBestWordChoices = 6;
 
         public PartialBiGram()
         {
@@ -102,9 +103,15 @@ namespace lambhootDiscordBot
         //to be called once the vocabulary is full (also handles words' wordAfter probs)
         public void processProbabilities()
         {
+            //get actual vocabulary count
+            int actualVocabCount = 0;
+            foreach(Word w in vocabulary.Values)
+            {
+                actualVocabCount += w.getWordCount();
+            }
             foreach (Word w in vocabulary.Values)
             {
-                w.wordProb = (float)w.getWordCount() / vocabulary.Count();
+                w.wordProb = (float)w.getWordCount() / actualVocabCount;
                 maxVocabWordProb = w.wordProb > maxVocabWordProb ? w.wordProb : maxVocabWordProb;
                 minVocabWordProb = w.wordProb < minVocabWordProb ? w.wordProb : minVocabWordProb;
 
@@ -216,36 +223,35 @@ namespace lambhootDiscordBot
                 //loop to build sentence
                 while (sentences.Last().Count() <= sentenceLength)
                 {
-                    if (returnString.Last().Equals('.') || returnString.Last().Equals('!') || returnString.Last().Equals('?') || returnString.Last().Equals(','))
+                    if (returnString.Last().Equals('.') || returnString.Last().Equals('!') || returnString.Last().Equals('?'))
                     {
+                        if (sentences.Last().Count() == 1 && returnString.Last().Equals('.'))//if sentence is a single word
+                            sentences.RemoveAt(sentences.Count() - 1);
                         sentences.Add(new List<Word>());//add a new sentence
                         sentences.Last().Add(selectRandomWord());//start the new sentence
                         returnString += " " + sentences.Last().Last();
                         break;
                     }
-                    int currentBestIndex = 0;
+                    int bestIndex = 0;
+                    List<IndexProbPair> currentBestIndices = new List<IndexProbPair>();
                     int loopAttempts = 7;
                     while (loopAttempts > 0)
                     {
-                        float currentBestProb = float.MinValue;
                         for (int i = 0; i < vocabulary.Count(); i++)
                         {
                             float newProb = vocabulary.ElementAt(i).Value.probabilityGivenSentence(sentences.Last());
-                            if (newProb > currentBestProb)
-                            {
-                                currentBestProb = newProb;
-                                currentBestIndex = i;
-                            }
+                            tryAddBestIndex(currentBestIndices, i, newProb);
                         }
-                        if (currentBestIndex == 0)
+                        bestIndex = selectRandomIndex(currentBestIndices);
+                        if (bestIndex == 0)
                             loopAttempts--;
                         else
                             break;
                     }
                     //now add the word found
-                    if (currentBestIndex > 0)//it found a word other than the first default one
+                    if (bestIndex != 0)//it found a word other than the first default one
                     {
-                        sentences.Last().Add(vocabulary.ElementAt(currentBestIndex).Value);
+                        sentences.Last().Add(vocabulary.ElementAt(bestIndex).Value);
                         returnString += " " + sentences.Last().Last();
                     }
                     else
@@ -333,7 +339,7 @@ namespace lambhootDiscordBot
 
         public Word selectRandomWord()
         {
-            int index = (int)MyBot.randomDoubleRange(0, vocabulary.Count());
+            int index = (int)MyBot.randomDoubleRange(1, vocabulary.Count());//skips first testing word
             return vocabulary.ElementAt(index).Value;
         }
 
@@ -355,6 +361,60 @@ namespace lambhootDiscordBot
                 countSum += l.Count();
             return countSum;
         }
+
+        public void tryAddBestIndex(List<IndexProbPair> currentBestIndices, int index, float prob)
+        {
+            if(currentBestIndices.Count() < maxBestWordChoices)
+            {
+                currentBestIndices.Add(new IndexProbPair(index, prob));
+            }
+            else {
+                if(currentBestIndices.First().prob < prob)
+                {
+                    currentBestIndices.Remove(currentBestIndices.First());
+                    currentBestIndices.Add(new IndexProbPair(index, prob));
+                }
+            }
+            currentBestIndices.Sort();
+        }
+
+        public class IndexProbPair : IComparable<IndexProbPair>
+        {
+            public int index;
+            public float prob;
+
+            public IndexProbPair(int index, float prob)
+            {
+                this.index = index;
+                this.prob = prob;
+            }
+
+            public int CompareTo(IndexProbPair other)
+            {
+                //for sorting, increasing order
+                return prob.CompareTo(other.prob);
+            }
+
+        }
+
+        public int selectRandomIndex(List<IndexProbPair> list)
+        {
+            int index = 0;
+            float sumProbs = 0;
+            foreach(IndexProbPair ipp in list){
+                sumProbs += ipp.prob;
+            }
+            if (sumProbs == 0)
+                return 0;
+
+            while (index == 0) {
+                index = (int)MyBot.randomDoubleRange(0, list.Count());
+                if (list[index].prob == 0)//&& sumProbs != 0
+                    index = 0;//try again
+            }
+            return list[index].index;
+        }
+
         #endregion UTILS
 
     }

@@ -155,8 +155,11 @@ namespace lambhootDiscordBot
             float nextWordProb = 0;
             List<float> probsList = new List<float>();
 
+            if (currentSentence.Last().wordString.Equals(this.wordString))
+                return nextWordProb;
+
             //add all conditional probs to a list
-            for(int i = 0; i < currentSentence.Count(); i++)
+            for (int i = 0; i < currentSentence.Count(); i++)
             {
                 float probForThisWord = this.ProbabilityOfWordgivenB(currentSentence[i], currentSentence.Count() - (i+1));
                 probsList.Add(probForThisWord);
@@ -174,9 +177,18 @@ namespace lambhootDiscordBot
             {
                 nextWordProb += myLog(p);
             }
-            return nextWordProb += this.wordProb;
+            return nextWordProb /= this.wordProb;
         }
 
+        public float ProbabilityOfWordgivenB(Word b, int gn = 0)
+        {
+            float numerator = (b.getProbabilityOfWordAfter(wordString, gn) * wordProb);
+            if (numerator == 0f || wordString.Equals(b.wordString))//if they are independent variables or they are the same, probability is done differently
+                return 0f;
+            float prob = numerator / b.wordProb;
+            //Note: +1 to avoid pure 0 probabilities
+            return prob;
+        }
 
         private float getProbabilityOfWordAfter(string word, int gn = 0)
         {
@@ -203,16 +215,6 @@ namespace lambhootDiscordBot
         {
             float prob = (float)MyBot.randomDoubleRange(minWordAfterProbList[gn] * 0.8, maxWordAfterProbList[gn] * 1.2);
             // 0.8 and 1.2 here because we want an even distribution of chance for the case that a word has only 1 wordAfter
-            return prob;
-        }
-
-        public float ProbabilityOfWordgivenB(Word b, int gn = 0)
-        {
-            float numerator = (b.getProbabilityOfWordAfter(wordString, gn) * wordProb);
-            if (numerator == 0f || wordString.Equals(b.wordString))//if they are independent variables or they are the same, probability is done differently
-                return 0f;
-            float prob = numerator / b.wordProb;
-            //Note: +1 to avoid pure 0 probabilities
             return prob;
         }
 
