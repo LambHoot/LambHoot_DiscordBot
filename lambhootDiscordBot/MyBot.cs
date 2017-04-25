@@ -88,7 +88,7 @@ namespace lambhootDiscordBot
         public async Task respondToLiveMessage(MessageCreateEventArgs msgEvent)
         {
             //ignore bots
-            if (msgEvent.Message.Author.IsBot)
+            if ((msgEvent.Message.Author.IsBot || msgEvent.Guild.Name == null) && msgEvent.Message.Author.ID != lambhootId)
                 return;
 
             //LOL responses
@@ -220,6 +220,8 @@ namespace lambhootDiscordBot
 
             }
 
+            await RespondRandomly(msgEvent);
+
             //logging
             if (logging)
             {
@@ -254,6 +256,16 @@ namespace lambhootDiscordBot
                 currentBeforeId = messageList.Last().ID;
             }
             var x = messageList;
+        }
+
+        public async Task RespondRandomly(MessageCreateEventArgs msgEvent)
+        {
+            double random = randomDoubleRange(0, 100);
+            if (random <= 4.0) {//so a 5% chance
+                string responseText = "";//50/50 chance now to get either type of response
+                responseText = (random <= 2.0) ? botPartialBiGram.generateNewBiGramSentence() : shakespeareGram.generateNewBiGramSentence();
+                await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " " + responseText);
+            }
         }
 
 
