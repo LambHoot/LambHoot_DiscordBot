@@ -286,7 +286,7 @@ namespace lambhootDiscordBot
             string sentenceEnders = ".?!";
             for(int i = 0; i < sentence.Count(); i++)
             {
-                if(Char.IsLower(sentence[i]) && i > 2)
+                if((Char.IsLower(sentence[i]) && i > 2) && !(sentence.Substring(i, 4).Equals("http")))//its lowercase and not a url
                 {
                     if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
                     {
