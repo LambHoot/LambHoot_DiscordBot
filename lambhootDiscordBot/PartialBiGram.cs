@@ -288,11 +288,11 @@ namespace lambhootDiscordBot
             {
                 if((Char.IsLower(sentence[i]) && i > 2))
                 {
-                    string http = sentence.Length >= 4 ? sentence.Substring(i, 4) : "";
-                    if (!http.Equals("http")) {//ensures that urls are not captilaized
-
-                        if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
-                        {
+                    if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
+                    {
+                        string http = sentence.Substring(i).Length >= 4 ? sentence.Substring(i, 4) : "";
+                        if (!http.Equals("http"))
+                        {//ensures that urls are not captilaized
                             sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
                             sentence = sentence.Remove(i + 1, 1);
                         }
