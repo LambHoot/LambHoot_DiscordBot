@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using DSharpPlus;
@@ -77,9 +78,19 @@ namespace lambhootDiscordBot
             };
 
             //new message event handling
-            discord.MessageCreated += async e =>
+            //from: https://stackoverflow.com/questions/363377/how-do-i-run-a-simple-bit-of-code-in-a-new-thread
+            discord.MessageCreated += e =>
             {
-                await respondToLiveMessage(e);
+                //await respondToLiveMessage(e);
+                new Thread(() =>
+                {
+                    Thread.CurrentThread.IsBackground = true;
+                    Console.WriteLine("--- new message handling thread created ---");
+                    respondToLiveMessage(e);
+                    //Console.WriteLine("--- new message handling thread ended --- ?");
+                }).Start();
+                //Console.WriteLine("--- new message handling task done ---");
+                return Task.Delay(0);
             };
 
             await discord.Connect();
