@@ -274,9 +274,21 @@ namespace lambhootDiscordBot
                 string andStr = "";
                 foreach (DiscordMember member in membersList)
                 {
-                    member.Roles.Add(jamesBondRole.ID);
-                    await msgEvent.Message.Respond(member.User.Mention + andStr + " you're a JamesBond");
-                    andStr = " and";
+                    if (member.User.ID != lhBotId)
+                    {
+                        try
+                        {
+                            List<ulong> newRoles = member.Roles;
+                            newRoles.Add(jamesBondRole.ID);
+                            await lhServer.ModifyMember(member.User.ID, "James Bond", newRoles, member.IsMuted, member.IsDeafened, 0);
+                            await msgEvent.Message.Respond(member.User.Mention + andStr + " you're a James Bond");
+                            andStr = " and";
+                        }
+                        catch (Exception e)//I'm not sure what the issue is, but it fails on some users. Based on bad documentation, I think users need to be online or else it fails
+                        {
+                            await msgEvent.Message.Respond(member.User.Mention + " I couldn't make you a James Bond, sorry!");
+                        }
+                    }
                 }
                 await msgEvent.Message.Respond("Everyone is a James Bond 😎👍");
             }

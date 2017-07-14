@@ -14,7 +14,7 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("_LambHoot Discord Bot v1.3 Full nGram_");
+            Console.WriteLine("_LambHoot Discord Bot v1.4 Full nGram & James Bond_");
 
             Console.WriteLine("_Discord Bot_");
             MyBot lambhootBot = new MyBot();
