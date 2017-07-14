@@ -85,8 +85,8 @@ namespace lambhootDiscordBot
                 new Thread(() =>
                 {
                     Thread.CurrentThread.IsBackground = true;
-                    Console.WriteLine("--- new message handling thread created ---");
-                    respondToLiveMessage(e);
+                    //Console.WriteLine("--- new message handling thread created ---");
+                    respondToLiveMessage(e);//doesn't need to be awaited. Only async for I/O awaiting within itself.
                     //Console.WriteLine("--- new message handling thread ended --- ?");
                 }).Start();
                 //Console.WriteLine("--- new message handling task done ---");
@@ -131,7 +131,7 @@ namespace lambhootDiscordBot
                 {
                     //lambhoot was mentioned
                     if (!possiblyLambHoot.Presence.Status.ToLower().Equals("online"))
-                        await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave the poor man alone");
+                        await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave the poor man alone 🙃");
                 }
 
 
@@ -233,6 +233,7 @@ namespace lambhootDiscordBot
                     //RETRAIN AI
                     if (msgEvent.Message.Content.ToLower().Equals("retrain"))
                     {
+                        Console.WriteLine("! RETRAIN REQUESTED !");
                         await msgEvent.Message.Respond("Retraining now ⏲️");
                         file.Close();
                         botPartialBiGram.retrain();
@@ -264,7 +265,8 @@ namespace lambhootDiscordBot
             }
             catch(Exception e)
             {
-                Console.WriteLine("FAILED RESPONDING TO MESSAGE!");
+                Console.WriteLine("!!! FAILED RESPONDING TO MESSAGE !!!");
+                await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave me alone 🔫😠");
             }
 
         }
