@@ -286,12 +286,16 @@ namespace lambhootDiscordBot
             string sentenceEnders = ".?!";
             for(int i = 0; i < sentence.Count(); i++)
             {
-                if((Char.IsLower(sentence[i]) && i > 2) && !(sentence.Substring(i, 4).Equals("http")))//its lowercase and not a url
+                if((Char.IsLower(sentence[i]) && i > 2))
                 {
-                    if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
-                    {
-                        sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
-                        sentence = sentence.Remove(i+1, 1);
+                    string http = sentence.Length >= 4 ? sentence.Substring(i, 4) : "";
+                    if (!http.Equals("http")) {//ensures that urls are not captilaized
+
+                        if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
+                        {
+                            sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
+                            sentence = sentence.Remove(i + 1, 1);
+                        }
                     }
                 }
             }
