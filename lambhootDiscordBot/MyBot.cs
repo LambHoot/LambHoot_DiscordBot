@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using DSharpPlus;
@@ -18,9 +19,9 @@ namespace lambhootDiscordBot
 
         private DiscordClient discord;
         private string botToken;
-        private string logFilePath, shakespeareFilePath;
+        private string logFilePath, shakespeareFilePath, lambhootFilePath;
 
-        private PartialBiGram botPartialBiGram, shakespeareGram;
+        private PartialBiGram botPartialBiGram, shakespeareGram, lambhootGram;
 
         public MyBot()
         {
@@ -38,21 +39,25 @@ namespace lambhootDiscordBot
             logFilePath = @""+Console.ReadLine();
             Console.WriteLine("Shakespear filepath: ");
             shakespeareFilePath = @"" + Console.ReadLine();
+            Console.WriteLine("LambHoot filepath: ");
+            lambhootFilePath = @"" + Console.ReadLine();
 
             discord = new DiscordClient(new DiscordConfig
             {
                 AutoReconnect = true,
                 DiscordBranch = Branch.Stable,
                 LargeThreshold = 250,
-                LogLevel = LogLevel.Unnecessary,
+                LogLevel = LogLevel.Debug,
                 Token = botToken,
                 TokenType = TokenType.Bot,
                 UseInternalLogHandler = false
             });
-            Console.WriteLine("_Partial BiGram_");
+            Console.WriteLine("_Partial NGram_");
             botPartialBiGram = new PartialBiGram(logFilePath);//closes the file when done
-            Console.WriteLine("_Shakespear BiGram_");
+            Console.WriteLine("_Shakespear NGram_");
             shakespeareGram = new PartialBiGram(shakespeareFilePath);//closes the file when done
+            Console.WriteLine("_LambHoot NGram_");
+            lambhootGram = new PartialBiGram(lambhootFilePath);//closes the file when done
             file = new System.IO.StreamWriter(logFilePath, true);
 
             Run().GetAwaiter().GetResult();
@@ -73,9 +78,19 @@ namespace lambhootDiscordBot
             };
 
             //new message event handling
-            discord.MessageCreated += async e =>
+            //from: https://stackoverflow.com/questions/363377/how-do-i-run-a-simple-bit-of-code-in-a-new-thread
+            discord.MessageCreated += e =>
             {
-                await respondToLiveMessage(e);
+                //await respondToLiveMessage(e);
+                new Thread(() =>
+                {
+                    Thread.CurrentThread.IsBackground = true;
+                    //Console.WriteLine("--- new message handling thread created ---");
+                    respondToLiveMessage(e);//doesn't need to be awaited. Only async for I/O awaiting within itself.
+                    //Console.WriteLine("--- new message handling thread ended --- ?");
+                }).Start();
+                //Console.WriteLine("--- new message handling task done ---");
+                return Task.Delay(0);
             };
 
             await discord.Connect();
@@ -87,145 +102,246 @@ namespace lambhootDiscordBot
 
         public async Task respondToLiveMessage(MessageCreateEventArgs msgEvent)
         {
-            //ignore bots
-            if (msgEvent.Message.Author.IsBot)
-                return;
-
-            //LOL responses
-            if (msgEvent.Message.Content.ToLower().Contains("lol"))
+            try
             {
+                //ignore bots
+                if ((msgEvent.Message.Author.IsBot || msgEvent.Guild.Name == null) && msgEvent.Message.Author.ID != lambhootId)
+                    return;
+
+                //LOL responses
+                if (msgEvent.Message.Content.ToLower().Contains("lol"))
+                {
+                    if (msgEvent.Message.Author.ID == lambhootId)
+                    {
+                        if (randomDoubleRange(0, 10) < 7)
+                            await msgEvent.Message.Respond("lol");
+                        else
+                            await msgEvent.Message.Respond("LOL");
+                    }
+                    else
+                    {
+                        if (randomDoubleRange(0, 10) < 4)
+                            await msgEvent.Message.Respond("lol");
+                    }
+                }
+
+                //mentioned lambhoot
+                DiscordUser possiblyLambHoot = messageContainsUser(msgEvent.Message, lambhootId);
+                if (possiblyLambHoot != null)
+                {
+                    //lambhoot was mentioned
+                    if (!possiblyLambHoot.Presence.Status.ToLower().Equals("online"))
+                        await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave the poor man alone 🙃");
+                }
+
+
+                //AI SPEAKING
+                DiscordUser possiblyBot = messageContainsUser(msgEvent.Message, lhBotId);
+                if (possiblyBot != null && msgEvent.MentionedUsers.Count() == 1)//only bot was mentioned
+                {
+                    string newNGramSentence;
+
+                    //first, select the NGram to use
+                    PartialBiGram usedBigram;
+                    if (msgEvent.Message.Content.ToLower().Contains("shakespeare"))
+                    {
+                        usedBigram = shakespeareGram;
+                    }
+                    else if (msgEvent.Message.Content.ToLower().Contains("lambhootngram"))
+                    {
+                        usedBigram = lambhootGram;
+                    }
+                    else
+                    {
+                        usedBigram = botPartialBiGram;
+                    }
+
+                    if (msgEvent.Message.Content.Contains("from:"))//user provided input
+                    {
+                        string[] msgSplit = msgEvent.Message.Content.Split(new string[] { "from:" }, StringSplitOptions.None);
+
+                        string input = null;
+                        if (msgSplit.Count() > 0)
+                        {
+                            input = msgSplit.Last();
+                            newNGramSentence = usedBigram.generateNewBiGramSentence(input);
+                            await msgEvent.Message.Respond(newNGramSentence);
+                            return;//no logging
+                        }//else, continue as normal
+                    }
+
+                    newNGramSentence = usedBigram.generateNewBiGramSentence();
+                    await msgEvent.Message.Respond(newNGramSentence);
+                    return;//no logging of either of these messages
+                }
+
+
+                //LAMBHOOT SPECIFIC COMMANDS
                 if (msgEvent.Message.Author.ID == lambhootId)
                 {
-                    if (randomDoubleRange(0, 10) < 7)
-                        await msgEvent.Message.Respond("lol");
-                    else
-                        await msgEvent.Message.Respond("LOL");
-                }
-                else
-                {
-                    if (randomDoubleRange(0, 10) < 4)
-                        await msgEvent.Message.Respond("lol");
-                }
-            }
+                    ////007 lol
+                    //if (msgEvent.Message.Content.ToLower().Contains("007")){
+                    //    DiscordRole jamesBondRoleName = msgEvent.Guild.Roles.Where(x => x.Name.Equals("JamesBond")).First();
+                    //    await msgEvent.Message.Respond("CALLING ALL " + jamesBondRoleName.Mention + "!");
+                    //}
 
-            //mentioned lambhoot
-            DiscordUser possiblyLambHoot = messageContainsUser(msgEvent.Message, lambhootId);
-            if (possiblyLambHoot != null)
-            {
-                //lambhoot was mentioned
-                if (!possiblyLambHoot.Presence.Status.ToLower().Equals("online"))
-                    await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave the poor man alone");
-            }
-
-
-            //AI SPEAKING
-            DiscordUser possiblyBot = messageContainsUser(msgEvent.Message, lhBotId);
-            if (possiblyBot != null && msgEvent.MentionedUsers.Count() == 1)//only bot was mentioned
-            {
-                string newBiGraphSentence;
-                if (msgEvent.Message.Content.Contains("from:"))//user provided input
-                {
-                    string[] msgSplit = msgEvent.Message.Content.Split(new string[] { "from:" }, StringSplitOptions.None);
-
-                    string input = null;
-                    if (msgSplit.Count() > 0)
+                    //logAllMessages
+                    if (msgEvent.Message.Content.ToLower().Equals("gg"))
                     {
-                        input = msgSplit.Last();
-                        newBiGraphSentence = botPartialBiGram.generateNewBiGramSentence(input);
-                        await msgEvent.Message.Respond(newBiGraphSentence);
-                        return;//no logging
-                    }//else, continue as normal
-                }
-
-                if (msgEvent.Message.Content.ToLower().Contains("shakespeare"))
-                {
-                    string shakespearSentence = shakespeareGram.generateNewBiGramSentence();
-                    await msgEvent.Message.Respond(shakespearSentence);
-                    return;//don't log
-                }
-
-                newBiGraphSentence = botPartialBiGram.generateNewBiGramSentence();
-                await msgEvent.Message.Respond(newBiGraphSentence);
-                return;//no logging of either of these messages
-            }
-
-
-            //LAMBHOOT SPECIFIC COMMANDS
-            if (msgEvent.Message.Author.ID == lambhootId)
-            {
-                ////007 lol
-                //if (msgEvent.Message.Content.ToLower().Contains("007")){
-                //    DiscordRole jamesBondRoleName = msgEvent.Guild.Roles.Where(x => x.Name.Equals("JamesBond")).First();
-                //    await msgEvent.Message.Respond("CALLING ALL " + jamesBondRoleName.Mention + "!");
-                //}
-
-                //logAllMessages
-                if (msgEvent.Message.Content.ToLower().Equals("gg"))
-                {
-                    await msgEvent.Message.Respond("👌");
-                }
-
-                //logAllMessages
-                if (msgEvent.Message.Content.ToLower().Equals("log"))
-                {
-                    await msgEvent.Message.Respond("Logging, hold up");
-                    //await logAllMessages(msgEvent);
-                    await msgEvent.Message.Respond("Logging done 👌");
-                    await msgEvent.Message.Respond("(this doesn't actually work anymore aaaaaye lmao)");
-                }
-
-                //beginLog
-                if (msgEvent.Message.Content.ToLower().Contains("begin log"))
-                {
-                    if (logging)
-                        await msgEvent.Message.Respond("Already on it ya mango");
-                    else
-                    {
-                        await msgEvent.Message.Respond("Hitting up that log, lemme know when to stop aight?");
-                        file.Close();
-                        file = new System.IO.StreamWriter(logFilePath, true);
-                        logging = true;
-                        Console.WriteLine("LOG STARTED!");
+                        await msgEvent.Message.Respond("👌");
                     }
-                    return;//so it doesn't log the log start
-                }
-                //endLog
-                if (msgEvent.Message.Content.ToLower().Contains("end log"))
-                {
-                    if (!logging)
-                        await msgEvent.Message.Respond("I'm not even doing it");
-                    else
+
+                    //logAllMessages
+                    if (msgEvent.Message.Content.ToLower().Equals("log"))
                     {
-                        await msgEvent.Message.Respond("You got it 👌 check that log file!");
-                        file.Close();
-                        logging = false;
-                        Console.WriteLine("LOG ENDED!");
+                        await msgEvent.Message.Respond("Logging, hold up");
+                        //await logAllMessages(msgEvent);
+                        await msgEvent.Message.Respond("Logging done 👌");
+                        await msgEvent.Message.Respond("(this doesn't actually work anymore aaaaaye lmao)");
                     }
-                    return;//so it doesn't log the log end
+
+                    //beginLog
+                    if (msgEvent.Message.Content.ToLower().Contains("begin log"))
+                    {
+                        if (logging)
+                            await msgEvent.Message.Respond("Already on it ya mango");
+                        else
+                        {
+                            await msgEvent.Message.Respond("Hitting up that log, lemme know when to stop aight?");
+                            file.Close();
+                            file = new System.IO.StreamWriter(logFilePath, true);
+                            logging = true;
+                            Console.WriteLine("LOG STARTED!");
+                        }
+                        return;//so it doesn't log the log start
+                    }
+                    //endLog
+                    if (msgEvent.Message.Content.ToLower().Contains("end log"))
+                    {
+                        if (!logging)
+                            await msgEvent.Message.Respond("I'm not even doing it");
+                        else
+                        {
+                            await msgEvent.Message.Respond("You got it 👌 check that log file!");
+                            file.Close();
+                            logging = false;
+                            Console.WriteLine("LOG ENDED!");
+                        }
+                        return;//so it doesn't log the log end
+                    }
+
+                    //RETRAIN AI
+                    if (msgEvent.Message.Content.ToLower().Equals("retrain"))
+                    {
+                        Console.WriteLine("! RETRAIN REQUESTED !");
+                        await msgEvent.Message.Respond("Retraining now ⏲️");
+                        file.Close();
+                        botPartialBiGram.retrain();
+                        if (logging)
+                            file = new System.IO.StreamWriter(logFilePath, true);
+                        await msgEvent.Message.Respond("Trained and ready to roll 😎");
+                        await msgEvent.Message.Respond("Test me!");
+                        return;//do not log this
+                    }
+
+                    if (msgEvent.Message.Content.ToLower().Equals("update jamesbonds"))
+                    {
+                        await updateJamesBonds(msgEvent);
+                    }
+
+                    if (msgEvent.Message.Content.ToLower().Equals("change everyone's name to james bond"))
+                    {
+                        await updateJamesBondNames(msgEvent);
+                    }
                 }
 
-                //RETRAIN AI
-                if (msgEvent.Message.Content.ToLower().Equals("retrain"))
+                await RespondRandomly(msgEvent);
+
+                //logging
+                if (logging)
                 {
-                    await msgEvent.Message.Respond("Retraining now ⏲️");
-                    file.Close();
-                    botPartialBiGram.retrain();
-                    if(logging)
-                        file = new System.IO.StreamWriter(logFilePath, true);
-                    await msgEvent.Message.Respond("Trained and ready to roll 😎");
-                    await msgEvent.Message.Respond("Test me!");
-                    return;//do not log this
+                    logMessage(msgEvent.Message.Content);
                 }
-
-
             }
-
-            //logging
-            if (logging)
+            catch(Exception e)
             {
-                logMessage(msgEvent.Message.Content);
+                Console.WriteLine("!!! FAILED RESPONDING TO MESSAGE !!!");
+                await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " leave me alone 🔫😠");
             }
 
+        }
+
+        public async Task updateJamesBonds(MessageCreateEventArgs msgEvent)
+        {
+            //await msgEvent.Message.Respond("Updating those 007s");
+            DiscordGuild lhServer = msgEvent.Guild;
+            DiscordRole jamesBondRole = msgEvent.Guild.Roles.Where(x => x.Name.Equals("JamesBond")).First();
+
+            List<DiscordMember> membersList = lhServer.Members.Where(x => !x.Roles.Contains(jamesBondRole.ID)).ToList<DiscordMember>();
+            if (membersList.Count <= 0)
+            {
+                await msgEvent.Message.Respond("Everyone is already James Bond 🔫😎");
+            }
+            else
+            {
+                string andStr = "";
+                foreach (DiscordMember member in membersList)
+                {
+                    if (member.User.ID != lhBotId)
+                    {
+                        try
+                        {
+                            List<ulong> newRoles = member.Roles;
+                            newRoles.Add(jamesBondRole.ID);
+                            await lhServer.ModifyMember(member.User.ID, "James Bond", newRoles, member.IsMuted, member.IsDeafened, 0);
+                            await msgEvent.Message.Respond(member.User.Mention + andStr + " you're a James Bond");
+                            andStr = " and";
+                        }
+                        catch (Exception e)//I'm not sure what the issue is, but it fails on some users. Based on bad documentation, I think users need to be online or else it fails
+                        {
+                            await msgEvent.Message.Respond(member.User.Mention + " I couldn't make you a James Bond, sorry!");
+                        }
+                    }
+                }
+                await msgEvent.Message.Respond("Everyone is a James Bond 😎👍");
+            }
+            return;
+        }
+
+        public async Task updateJamesBondNames(MessageCreateEventArgs msgEvent)
+        {
+            DiscordGuild lhServer = msgEvent.Guild;
+            await msgEvent.Message.Respond("I'm trying father");
+
+            Task<List<DiscordMember>> taskMembersList = lhServer.GetAllMembers();
+            List<DiscordMember>  membersList = taskMembersList.Result.Where(x => x.Nickname != "James Bond").ToList<DiscordMember>();
+            if (membersList.Count <= 0)
+            {
+                await msgEvent.Message.Respond("Everyone is already James Bond 🔫😎");
+            }
+            else
+            {
+                await msgEvent.Message.Respond("Updating those 007s");
+                string andStr = "";
+                foreach (DiscordMember member in membersList)
+                {
+                    if (member.User.ID != lhBotId)
+                    {
+                        try
+                        {
+                            await lhServer.ModifyMember(member.User.ID, "James Bond", member.Roles, member.IsMuted, member.IsDeafened, 0);
+                            await msgEvent.Message.Respond(member.User.Mention + andStr + " you're a James Bond");
+                            andStr = " and";
+                        }
+                        catch(Exception e)//I'm not sure what the issue is, but it fails on some users. Based on bad documentation, I think users need to be online or else it fails
+                        {
+                            await msgEvent.Message.Respond(member.User.Mention + " I couldn't make you a James Bond, sorry!");
+                        }
+                    }
+                }
+                await msgEvent.Message.Respond("Everyone is a James Bond 😎👍");
+            }
+            return;
         }
 
         //logs a single message
@@ -254,6 +370,16 @@ namespace lambhootDiscordBot
                 currentBeforeId = messageList.Last().ID;
             }
             var x = messageList;
+        }
+
+        public async Task RespondRandomly(MessageCreateEventArgs msgEvent)
+        {
+            double random = randomDoubleRange(0, 100);
+            if (random <= 4.0) {//so a 5% chance
+                string responseText = "";//50/50 chance now to get either type of response
+                responseText = (random <= 2.0) ? botPartialBiGram.generateNewBiGramSentence() : shakespeareGram.generateNewBiGramSentence();
+                await msgEvent.Message.Respond(msgEvent.Message.Author.Mention + " " + responseText);
+            }
         }
 
 

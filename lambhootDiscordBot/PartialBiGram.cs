@@ -13,6 +13,7 @@ namespace lambhootDiscordBot
         private string trainingFilePath;
         public static int minSentenceLength = 1, maxSentenceLength = int.MinValue;
         public static float minVocabWordProb = 99, maxVocabWordProb = int.MinValue;
+        public static int maxBestWordChoices = 6;
 
         public PartialBiGram()
         {
@@ -65,6 +66,7 @@ namespace lambhootDiscordBot
             }
             //update probs
             processProbabilities();
+            var x = vocabulary;
         }
 
         public void addWordsFromLine(string line)
@@ -90,19 +92,26 @@ namespace lambhootDiscordBot
                     vocabulary.Add(stringWords[i], new Word(stringWords[i]));
                 }
                 //add the wordAfters if possible
-                if (i + 1 < stringWords.Count())
-                    vocabulary[stringWords[i]].addWordAfter(stringWords[i + 1]);
-                if (i + 2 < stringWords.Count())
-                    vocabulary[stringWords[i]].addWordAfter(stringWords[i + 2], 2);
+
+                for(int j = i+1; j < stringWords.Count(); j++)
+                {
+                    vocabulary[stringWords[i]].addWordAfter(stringWords[j], j-(i+1));//j-original j) gives the correct gram number
+                }    
             }
         }
 
         //to be called once the vocabulary is full (also handles words' wordAfter probs)
         public void processProbabilities()
         {
+            //get actual vocabulary count
+            int actualVocabCount = 0;
+            foreach(Word w in vocabulary.Values)
+            {
+                actualVocabCount += w.getWordCount();
+            }
             foreach (Word w in vocabulary.Values)
             {
-                w.wordProb = (float)w.getWordCount() / vocabulary.Count();
+                w.wordProb = (float)w.getWordCount() / actualVocabCount;
                 maxVocabWordProb = w.wordProb > maxVocabWordProb ? w.wordProb : maxVocabWordProb;
                 minVocabWordProb = w.wordProb < minVocabWordProb ? w.wordProb : minVocabWordProb;
 
@@ -179,16 +188,16 @@ namespace lambhootDiscordBot
 
         public string generateNewBiGramSentence(string input = null)
         {
-            List<Word> sentence = new List<Word>();
+            List<List<Word>> sentences = new List<List<Word>>();
+            sentences.Add(new List<Word>());//first sentence
             string returnString = "";
-            int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, Math.Min(maxSentenceLength * 0.6, 25));
 
             //input handle
             if (input == null)
             {
                 //choose first word
-                sentence.Add(selectRandomWord());
-                returnString += " " + sentence.Last();
+                sentences.Last().Add(selectRandomWord());
+                returnString += " " + sentences.Last().Last();
             }
             else
             {
@@ -196,52 +205,66 @@ namespace lambhootDiscordBot
                 string[] inputArray = input.Split(' ');
                 string inputWord = inputArray.Last();
 
-                    for (int i = 0; i < inputArray.Count(); i++)
+                for (int i = 0; i < inputArray.Count(); i++)
+                {
+                    if (vocabulary.ContainsKey(inputArray[i]))
                     {
-                        if (vocabulary.ContainsKey(inputArray[i]))
-                        {
-                            sentence.Add(vocabulary[inputArray[i]]);
-                        }
-                        else
-                            sentence.Add(new Word(inputArray[i]));
-                        returnString += " " + sentence.Last();
+                        sentences.Last().Add(vocabulary[inputArray[i]]);
                     }
+                    else
+                        sentences.Last().Add(new Word(inputArray[i]));
+                    returnString += " " + sentences.Last().Last();
+                }
             }
 
-            //loop to build sentence
-            while (sentence.Count() < sentenceLength)
-            {
-                int currentBestIndex = 0;
-                float currentBestProb = float.MinValue;
-                for (int i = 0; i < vocabulary.Count(); i++)
+            int allSentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, Math.Min(maxSentenceLength * 0.6, 25));
+            while (CountWordsOfSentences(sentences) < allSentenceLength) {
+                int sentenceLength = (int)MyBot.randomDoubleRange(minSentenceLength, allSentenceLength);
+                //loop to build sentence
+                while (sentences.Last().Count() <= sentenceLength)
                 {
-                    float newProb = vocabulary.ElementAt(i).Value.probabilityGivenSentence(sentence);
-                    if (newProb > currentBestProb)
+                    if (returnString.Last().Equals('.') || returnString.Last().Equals('!') || returnString.Last().Equals('?'))
                     {
-                        currentBestProb = newProb;
-                        currentBestIndex = i;
+                        if (sentences.Last().Count() == 1 && returnString.Last().Equals('.'))//if sentence is a single word
+                            sentences.RemoveAt(sentences.Count() - 1);
+                        sentences.Add(new List<Word>());//add a new sentence
+                        sentences.Last().Add(selectRandomWord());//start the new sentence
+                        returnString += " " + sentences.Last().Last();
+                        break;
                     }
-                    
-                }
-                //now add the word found
-                if (currentBestIndex > 0)//it found a word other than the first default one
-                {
-                    sentence.Add(vocabulary.ElementAt(currentBestIndex).Value);
-                    returnString += " " + sentence.Last();
-                }
-                else
-                {
-                    //it failed to find a proper word. add punctuation if necessary and choose new random word
-                    if (!Char.IsPunctuation(returnString.Last()))
-                        returnString += (MyBot.randomDoubleRange(0, 100) > 50) ? "," : ".";
-                    //add a comma or period to it since it failed, if the last character isn't already a punctuation
-                    Word nextWord = null;
-                    while (nextWord == null)
+                    int bestIndex = 0;
+                    List<IndexProbPair> currentBestIndices = new List<IndexProbPair>();
+                    int loopAttempts = 7;
+                    while (loopAttempts > 0)
                     {
-                        nextWord = selectRandomWord();
+                        for (int i = 0; i < vocabulary.Count(); i++)
+                        {
+                            float newProb = vocabulary.ElementAt(i).Value.probabilityGivenSentence(sentences.Last());
+                            tryAddBestIndex(currentBestIndices, i, newProb);
+                        }
+                        bestIndex = selectRandomIndex(currentBestIndices);
+                        if (bestIndex == 0)
+                            loopAttempts--;
+                        else
+                            break;
                     }
-                    sentence.Add(nextWord);
-                    returnString += " " + sentence.Last();
+                    //now add the word found
+                    if (bestIndex != 0)//it found a word other than the first default one
+                    {
+                        sentences.Last().Add(vocabulary.ElementAt(bestIndex).Value);
+                        returnString += " " + sentences.Last().Last();
+                    }
+                    else
+                    {
+                        //it failed to find a proper word. add punctuation if necessary and choose new random word
+                        if (!Char.IsPunctuation(returnString.Last()))
+                            returnString += (MyBot.randomDoubleRange(0, 100) > 50) ? "," : ".";
+                        //add a comma or period to it since it failed, if the last character isn't already a punctuation
+                        sentences.Add(new List<Word>());//add a new sentence
+                        sentences.Last().Add(selectRandomWord());//start the new sentence
+                        returnString += " " + sentences.Last().Last();
+                        break;
+                    }
                 }
             }
             //sentence cleanup
@@ -263,12 +286,16 @@ namespace lambhootDiscordBot
             string sentenceEnders = ".?!";
             for(int i = 0; i < sentence.Count(); i++)
             {
-                if(Char.IsLower(sentence[i]) && i > 2)
+                if((Char.IsLower(sentence[i]) && i > 2))
                 {
                     if ((sentence[i - 1].Equals(' ') && sentenceEnders.Contains(sentence[i - 2])) || i == 0)
                     {
-                        sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
-                        sentence = sentence.Remove(i+1, 1);
+                        string http = sentence.Substring(i).Length >= 4 ? sentence.Substring(i, 4) : "";
+                        if (!http.Equals("http"))
+                        {//ensures that urls are not captilaized
+                            sentence = sentence.Insert(i, sentence[i].ToString().ToUpper());
+                            sentence = sentence.Remove(i + 1, 1);
+                        }
                     }
                 }
             }
@@ -316,7 +343,7 @@ namespace lambhootDiscordBot
 
         public Word selectRandomWord()
         {
-            int index = (int)MyBot.randomDoubleRange(0, vocabulary.Count());
+            int index = (int)MyBot.randomDoubleRange(1, vocabulary.Count());//skips first testing word
             return vocabulary.ElementAt(index).Value;
         }
 
@@ -328,7 +355,72 @@ namespace lambhootDiscordBot
 
 
         #endregion Sentence Generation
-    }
 
+
+        #region UTILS
+        public static int CountWordsOfSentences(List<List<Word>> sentences)
+        {
+            int countSum = 0;
+            foreach (List<Word> l in sentences)
+                countSum += l.Count();
+            return countSum;
+        }
+
+        public void tryAddBestIndex(List<IndexProbPair> currentBestIndices, int index, float prob)
+        {
+            if(currentBestIndices.Count() < maxBestWordChoices)
+            {
+                currentBestIndices.Add(new IndexProbPair(index, prob));
+            }
+            else {
+                if(currentBestIndices.First().prob < prob)
+                {
+                    currentBestIndices.Remove(currentBestIndices.First());
+                    currentBestIndices.Add(new IndexProbPair(index, prob));
+                }
+            }
+            currentBestIndices.Sort();
+        }
+
+        public class IndexProbPair : IComparable<IndexProbPair>
+        {
+            public int index;
+            public float prob;
+
+            public IndexProbPair(int index, float prob)
+            {
+                this.index = index;
+                this.prob = prob;
+            }
+
+            public int CompareTo(IndexProbPair other)
+            {
+                //for sorting, increasing order
+                return prob.CompareTo(other.prob);
+            }
+
+        }
+
+        public int selectRandomIndex(List<IndexProbPair> list)
+        {
+            int index = 0;
+            float sumProbs = 0;
+            foreach(IndexProbPair ipp in list){
+                sumProbs += ipp.prob;
+            }
+            if (sumProbs == 0)
+                return 0;
+
+            while (index == 0) {
+                index = (int)MyBot.randomDoubleRange(0, list.Count());
+                if (list[index].prob == 0)//&& sumProbs != 0
+                    index = 0;//try again
+            }
+            return list[index].index;
+        }
+
+        #endregion UTILS
+
+    }
 
 }
