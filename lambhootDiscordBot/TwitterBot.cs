@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Tweetinvi;
+using Tweetinvi.Models;
 
 namespace lambhootDiscordBot
 {
@@ -43,13 +45,29 @@ namespace lambhootDiscordBot
                     else if (tweets.First().Id != lastTweet.Id)
                     {
                         lastTweet = tweets.First();
-                        sendResponseTweet(lastTweet.CreatedBy.ScreenName);
+                        new Thread(() =>
+                        {
+                            Thread.CurrentThread.IsBackground = true;
+                            sendResponseTweet(lastTweet);
+                        }).Start();
+                        //sendResponseTweet(lastTweet);
                     }
                     else
                     {
                         //do nothing
                         Console.WriteLine($"[{DateTime.Now}] -> No new mentions.");
-                        sendRandomTweet();
+                        new Thread(() =>
+                        {
+                            Thread.CurrentThread.IsBackground = true;
+                            if (!sendRandomTweet())
+                            {
+                                double chance = randomDoubleRange(0, 100);
+                                if (chance < 1)
+                                {
+                                    sendResponseTweet(lastTweet);
+                                }
+                            }
+                        }).Start();
                     }
 
                     Console.WriteLine($"[{DateTime.Now}] -> sleep for 20 seconds");
@@ -58,16 +76,19 @@ namespace lambhootDiscordBot
                 catch(Exception e)
                 {
                     //if there's an exception thrown, it's likely the Twitter api call limit being reached
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"[{DateTime.Now}] -> Exception thrown. Waiting 16 minutes.");
+                    Console.ResetColor();
                     System.Threading.Thread.Sleep(16*60000);
                 }
             }
         }
 
-        private void sendResponseTweet(string screen_name)
+        private void sendResponseTweet(IMention tweetReplyTo)
         {
-            string mentionName = ".@" + screen_name;
-            Console.WriteLine($"[{DateTime.Now}] -> Generating response to " + mentionName + "...");
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine($"[{DateTime.Now}] -> Generating response to " + tweetReplyTo.CreatedBy.ScreenName + "...");
+            Console.ResetColor();
 
             PartialBiGram useLanguageModel;
             double random = randomDoubleRange(0, 100);
@@ -79,20 +100,20 @@ namespace lambhootDiscordBot
                 useLanguageModel = lambhootGram;//60%
 
             string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
-            string tweetString = mentionName + " " + newNGramSentence;
-            tweetString = tweetString.Substring(0, Math.Min(140, newNGramSentence.Length));
 
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine($"[{DateTime.Now}] -> NEW MENTION: " + tweetString);
+            string textToPublish = string.Format("@{0} {1}", tweetReplyTo.CreatedBy.ScreenName, newNGramSentence);
+            textToPublish = textToPublish.Substring(0, Math.Min(140, newNGramSentence.Length));
+            Tweet.PublishTweetInReplyTo(textToPublish, tweetReplyTo.Id);
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"[{DateTime.Now}] -> NEW MENTION: " + textToPublish);
             Console.ResetColor();
-
-            Tweet.PublishTweet(tweetString);
         }
 
-        private void sendRandomTweet()
+        private bool sendRandomTweet()
         {
             double chance = randomDoubleRange(0, 100);
-            if (chance < 2)
+            if (chance < 1)
             {
                 PartialBiGram useLanguageModel;
                 double random = randomDoubleRange(0, 100);
@@ -107,12 +128,14 @@ namespace lambhootDiscordBot
                 string tweetString = newNGramSentence;
                 tweetString = tweetString.Substring(0, Math.Min(140, newNGramSentence.Length));
 
-                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"[{DateTime.Now}] -> NEW RANDOM TWEET: " + tweetString);
                 Console.ResetColor();
 
                 Tweet.PublishTweet(tweetString);
+                return true;
             }
+            return false;
         }
 
         private void authenticate()
