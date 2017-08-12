@@ -16,8 +16,10 @@ namespace lambhootDiscordBot
         {
             Console.WriteLine("_LambHoot Discord Bot v1.4 Full nGram & James Bond_");
 
-            Console.WriteLine("_Discord Bot_");
-            MyBot lambhootBot = new MyBot();
+            //Console.WriteLine("_Discord Bot_");
+            //MyBot lambhootBot = new MyBot();
+
+            TwitterBot AceTwitter = new TwitterBot();
 
             //Console.WriteLine("_Partial BiGram_");
             //PartialBiGram myPartialBiGram = new PartialBiGram();
