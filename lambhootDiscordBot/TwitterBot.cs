@@ -49,9 +49,10 @@ namespace lambhootDiscordBot
                     {
                         //do nothing
                         Console.WriteLine($"[{DateTime.Now}] -> No new mentions.");
+                        sendRandomTweet();
                     }
 
-                    Console.WriteLine($"{DateTime.Now}");
+                    Console.WriteLine($"[{DateTime.Now}] -> sleep for 20 seconds");
                     System.Threading.Thread.Sleep(20000);
                 }
                 catch(Exception e)
@@ -65,7 +66,7 @@ namespace lambhootDiscordBot
 
         private void sendResponseTweet(string screen_name)
         {
-            string mentionName = "@" + screen_name;
+            string mentionName = ".@" + screen_name;
             Console.WriteLine($"[{DateTime.Now}] -> Generating response to " + mentionName + "...");
 
             PartialBiGram useLanguageModel;
@@ -77,15 +78,41 @@ namespace lambhootDiscordBot
             else
                 useLanguageModel = lambhootGram;//60%
 
-            string newNGramSentence = lambhootGram.generateNewBiGramSentence();
+            string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
             string tweetString = mentionName + " " + newNGramSentence;
             tweetString = tweetString.Substring(0, Math.Min(140, newNGramSentence.Length));
 
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine($"[{DateTime.Now}] -> NEW TWEET: " + tweetString);
+            Console.WriteLine($"[{DateTime.Now}] -> NEW MENTION: " + tweetString);
             Console.ResetColor();
 
             Tweet.PublishTweet(tweetString);
+        }
+
+        private void sendRandomTweet()
+        {
+            double chance = randomDoubleRange(0, 100);
+            if (chance < 2)
+            {
+                PartialBiGram useLanguageModel;
+                double random = randomDoubleRange(0, 100);
+                if (random < 20)
+                    useLanguageModel = shakespeareGram;//20%
+                else if (random < 50)
+                    useLanguageModel = botPartialBiGram;//30%
+                else
+                    useLanguageModel = lambhootGram;//50%
+
+                string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
+                string tweetString = newNGramSentence;
+                tweetString = tweetString.Substring(0, Math.Min(140, newNGramSentence.Length));
+
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine($"[{DateTime.Now}] -> NEW RANDOM TWEET: " + tweetString);
+                Console.ResetColor();
+
+                Tweet.PublishTweet(tweetString);
+            }
         }
 
         private void authenticate()
