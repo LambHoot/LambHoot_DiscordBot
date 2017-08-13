@@ -33,10 +33,40 @@ namespace lambhootDiscordBot
         private void TwitterLoop()
         {
             Tweetinvi.Models.IMention lastTweet = null;
+            Tweetinvi.Models.ITweet lastLoggedTweet = null;
+            DateTime timeSinceLastTrain = DateTime.Now;
             while (true)
             {
+                if (timeSinceLastTrain.AddMinutes(30) < DateTime.Now)
+                {
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                    Console.WriteLine($"[{ DateTime.Now}] -> Retraining at 30 minutes");
+                    file.Close();
+                    botPartialBiGram.retrain();
+                    file = new System.IO.StreamWriter(logFilePath, true);
+                    Console.WriteLine("Retraining complete");
+                    Console.ResetColor();
+                    timeSinceLastTrain = DateTime.Now;
+                }
+
                 try {
                     var tweets = Timeline.GetMentionsTimeline(1);
+                    var timelineTweets = Timeline.GetHomeTimeline(1);
+
+                    //log new timelines tweets
+                    if (timelineTweets != null)
+                    {
+                        if (lastLoggedTweet == null)
+                            lastLoggedTweet = timelineTweets.First();
+                        else if ((lastLoggedTweet.Id != timelineTweets.First().Id) && !String.Equals(timelineTweets.First().CreatedBy.ScreenName, "AceNickelback"))
+                        {
+                            lastLoggedTweet = timelineTweets.First();
+                            string loggedString = lastLoggedTweet.Text;
+                            logMessage(loggedString);
+                        }
+                    }
+
+                    //reply logic
                     if (lastTweet == null)
                     {
                         lastTweet = tweets.First();
@@ -55,7 +85,7 @@ namespace lambhootDiscordBot
                     else
                     {
                         //do nothing
-                        Console.WriteLine($"[{DateTime.Now}] -> No new mentions.");
+                        //Console.WriteLine($"[{DateTime.Now}] -> No new mentions.");
                         new Thread(() =>
                         {
                             Thread.CurrentThread.IsBackground = true;
@@ -70,16 +100,24 @@ namespace lambhootDiscordBot
                         }).Start();
                     }
 
-                    Console.WriteLine($"[{DateTime.Now}] -> sleep for 20 seconds");
+                   //Console.WriteLine($"[{DateTime.Now}] -> sleep for 20 seconds");
                     System.Threading.Thread.Sleep(20000);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     //if there's an exception thrown, it's likely the Twitter api call limit being reached
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"[{DateTime.Now}] -> Exception thrown. Waiting 16 minutes.");
+                    Console.WriteLine($"[{DateTime.Now}] -> Exception thrown: " + e.Message);
+
+                    Console.WriteLine("Retraining first though...");
+                    file.Close();
+                    botPartialBiGram.retrain();
+                    file = new System.IO.StreamWriter(logFilePath, true);
+                    Console.WriteLine("Retraining complete");
+
+                    Console.WriteLine($"[{DateTime.Now}] -> Waiting 3 minutes.");
                     Console.ResetColor();
-                    System.Threading.Thread.Sleep(16*60000);
+                    System.Threading.Thread.Sleep(3 * 60000);
                 }
             }
         }
@@ -95,14 +133,14 @@ namespace lambhootDiscordBot
             if(random < 20)
                 useLanguageModel = shakespeareGram;//20%
             else if (random < 40)
-                useLanguageModel = botPartialBiGram;//20%
+                useLanguageModel = lambhootGram;//20%
             else
-                useLanguageModel = lambhootGram;//60%
+                useLanguageModel = botPartialBiGram;//60%
 
             string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
 
             string textToPublish = string.Format("@{0} {1}", tweetReplyTo.CreatedBy.ScreenName, newNGramSentence);
-            textToPublish = textToPublish.Substring(0, Math.Min(140, newNGramSentence.Length));
+            textToPublish = textToPublish.Substring(0, Math.Min(140, textToPublish.Length));
             Tweet.PublishTweetInReplyTo(textToPublish, tweetReplyTo.Id);
 
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -176,6 +214,16 @@ namespace lambhootDiscordBot
         public static double randomDoubleRange(double min, double max)
         {
             return min + (rng.NextDouble() * (max - min));
+        }
+
+        //logs a single message
+        public void logMessage(string msgContent)
+        {
+            if (String.IsNullOrWhiteSpace(msgContent))
+                return;
+            file.WriteLine(msgContent);
+            file.Flush();
+            Console.WriteLine("LOGGED: " + msgContent);
         }
 
     }
