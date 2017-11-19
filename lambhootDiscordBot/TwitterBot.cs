@@ -100,8 +100,8 @@ namespace lambhootDiscordBot
                         }).Start();
                     }
 
-                   //Console.WriteLine($"[{DateTime.Now}] -> sleep for 20 seconds");
-                    System.Threading.Thread.Sleep(20000);
+                   //Console.WriteLine($"[{DateTime.Now}] -> sleep for 2 MINUTES");
+                    System.Threading.Thread.Sleep(2*60000);
                 }
                 catch (Exception e)
                 {
