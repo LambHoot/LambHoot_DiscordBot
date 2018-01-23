@@ -94,14 +94,15 @@ namespace lambhootDiscordBot
                                 double chance = randomDoubleRange(0, 100);
                                 if (chance < 1)
                                 {
-                                    sendResponseTweet(lastTweet);
+                                    //sendResponseTweet(lastTweet);
                                 }
                             }
                         }).Start();
                     }
 
-                   //Console.WriteLine($"[{DateTime.Now}] -> sleep for 2 MINUTES");
-                    System.Threading.Thread.Sleep(2*60000);
+                    //Console.WriteLine($"[{DateTime.Now}] -> sleep for 3 MINUTES");
+                    Console.WriteLine($"[{DateTime.Now}] -> --");
+                    System.Threading.Thread.Sleep((int)(3 * 60000));
                 }
                 catch (Exception e)
                 {
@@ -115,9 +116,9 @@ namespace lambhootDiscordBot
                     file = new System.IO.StreamWriter(logFilePath, true);
                     Console.WriteLine("Retraining complete");
 
-                    Console.WriteLine($"[{DateTime.Now}] -> Waiting 3 minutes.");
+                    Console.WriteLine($"[{DateTime.Now}] -> Waiting 5 minutes.");
                     Console.ResetColor();
-                    System.Threading.Thread.Sleep(3 * 60000);
+                    System.Threading.Thread.Sleep(5 * 60000);
                 }
             }
         }
@@ -151,16 +152,16 @@ namespace lambhootDiscordBot
         private bool sendRandomTweet()
         {
             double chance = randomDoubleRange(0, 100);
-            if (chance < 1)
+            if (chance <= 5)
             {
                 PartialBiGram useLanguageModel;
                 double random = randomDoubleRange(0, 100);
-                if (random < 20)
-                    useLanguageModel = shakespeareGram;//20%
-                else if (random < 50)
-                    useLanguageModel = botPartialBiGram;//30%
+                if (random < 10)
+                    useLanguageModel = shakespeareGram;//10%
+                else if (random < 55)
+                    useLanguageModel = botPartialBiGram;//45%
                 else
-                    useLanguageModel = lambhootGram;//50%
+                    useLanguageModel = lambhootGram;//45%
 
                 string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
                 string tweetString = newNGramSentence;
