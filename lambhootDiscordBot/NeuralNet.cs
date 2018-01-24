@@ -31,6 +31,53 @@ namespace lambhootDiscordBot
             double[][] vectorized_data = vectorize_training_file();
 
             //initialize input and output values using vectorized_data
+
+
+            List<double[]> inputs = new List<double[]>();
+            List<double[]> outputs = new List<double[]>();
+
+            InputOutputVectorsPair[] IOVPairs = get_all_input_output_pairs_from_vector(vectorized_data);
+
+            //count how many are non-empty
+            int non_empty_count = 0;
+            foreach (InputOutputVectorsPair IOVPair in IOVPairs)
+            {
+                if (IOVPair.inputs.Length != 0)
+                    non_empty_count++;
+            }
+
+                
+
+            //double[][] inputs = new double[non_empty_count * max_sentence_length][];
+            //double[][] outputs = new double[non_empty_count * max_sentence_length][];
+
+            int io_i = 0;
+            foreach (InputOutputVectorsPair IOVPair in IOVPairs)
+            {
+                if (IOVPair.inputs.Length != 0)
+                {
+                    foreach (double[] pair_input in IOVPair.inputs)
+                    {
+                        if(pair_input != null)
+                            inputs.Add(pair_input);
+                    }
+                    foreach (double[] pair_output in IOVPair.outputs)
+                    {
+                        if (pair_output != null)
+                            outputs.Add(pair_output);
+                    }
+                }
+                io_i++;
+            }
+
+            double[][] input = inputs.ToArray<double[]>();
+            double[][] output = outputs.ToArray<double[]>();
+
+            var s = 0;
+
+            //should have inputs and outputs by this point
+
+            /*
             double[][] input = new double[4][] {
                 new double[] {0, 0}, new double[] {0, 1},
                 new double[] {1, 0}, new double[] {1, 1}
@@ -39,20 +86,25 @@ namespace lambhootDiscordBot
                 new double[] {0}, new double[] {1},
                 new double[] {1}, new double[] {0}
             };
+            */
 
             //create neural network
             ActivationNetwork network = new ActivationNetwork(
-                new SigmoidFunction(2),
+                new SigmoidFunction(0.0001),
                 max_sentence_length, // max possible inputs passed to the network
-                3, // three neurons in the first layer
-                max_sentence_length); // one neuron in the final (output) layer
+                10, // three neurons in the first layer
+                7, // three neurons in the first layer
+                10, // three neurons in the first layer
+                4, // three neurons in the first layer
+                1); // one neuron in the final (output) layer, picks one char as output
                     // create teacher
-            BackPropagationLearning teacher =
-                new BackPropagationLearning(network);
+            BackPropagationLearning teacher = new BackPropagationLearning(network);
+            teacher.LearningRate = 0.3;
 
             //train
+            Console.WriteLine("_TRAINING BEGIN_");
             bool training_complete = false;
-            int training_limit = 10000;
+            int training_limit = 1000;
             while (!training_complete && training_limit > 0)
             {
                 training_limit--;
@@ -66,6 +118,9 @@ namespace lambhootDiscordBot
                 // ...
             }
 
+            network.Save("lambhoot_scripts_neural_network.bin");
+            //Network.Load( "lambhoot_scripts_neural_network.bin" );
+
             double[] compute_input = { 1, 1 };
 
             double[] computed =  network.Compute(compute_input);
@@ -75,16 +130,32 @@ namespace lambhootDiscordBot
 
        
 
-        public double[][] get_all_input_output_pairs_from_vector(double[][] vectors)
+        public InputOutputVectorsPair[] get_all_input_output_pairs_from_vector(double[][] vectors)
         {
-            //TODO if vectors is null, skip it
 
             InputOutputVectorsPair[] IOVectorPairs = new InputOutputVectorsPair[vectors.Length];
 
+            int vi = 0;
             foreach(double[] vector in vectors)
             {
-                //break down by length and create pairs
+                //break down by length and create pairs of input lead and single output character
+                double[][] input = new double[vector.Length][];
+                double[][] output = new double[vector.Length][];
+                for (int i = 0; i < vector.Length - 1; i++)
+                {
+                    double[] input_row = new double[max_sentence_length];
+                    double[] relevant_input = vector.Take(i).ToArray();
+                    for(int ri = 0; ri < relevant_input.Length; ri++)
+                    {
+                        input_row[ri] = relevant_input[ri];
+                    }
+                    input[i] = input_row;
+                    //double[] output = vector.Skip(i).ToArray();
+                    output[i] = new double[]{ vector[i+1] };
+                }
                 //insert into array of pairs
+                IOVectorPairs[vi] = new InputOutputVectorsPair(input, output);
+                vi++;
             }
             return IOVectorPairs;
         }
