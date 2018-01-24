@@ -20,6 +20,10 @@ namespace lambhootDiscordBot
             string sentence = neural_agent.generateSentence();
             Console.WriteLine(sentence);
 
+            sentence = "I love my whole LIFE!!!";
+            double[] vector = neural_agent.sentence_to_vector(sentence);
+            string vector_sentence = neural_agent.vector_to_sentence(vector);
+
             var x = 0;
 
             //Console.WriteLine("_Discord Bot_");
