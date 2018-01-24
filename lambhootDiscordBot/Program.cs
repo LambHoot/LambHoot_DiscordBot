@@ -14,12 +14,18 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("_LambHoot Discord Bot v1.4 Full nGram & James Bond_");
+            Console.WriteLine("_LambHoot Neural Net Twitter Bot v1.5_");
+
+            NeuralNet neural_agent = new NeuralNet();
+            string sentence = neural_agent.generateSentence();
+            Console.WriteLine(sentence);
+
+            var x = 0;
 
             //Console.WriteLine("_Discord Bot_");
             //MyBot lambhootBot = new MyBot();
 
-            TwitterBot AceTwitter = new TwitterBot();
+            ////////////TwitterBot AceTwitter = new TwitterBot();
 
             //Console.WriteLine("_Partial BiGram_");
             //PartialBiGram myPartialBiGram = new PartialBiGram();
