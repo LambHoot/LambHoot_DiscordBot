@@ -16,6 +16,7 @@ namespace lambhootDiscordBot
         private System.IO.StreamReader file;
         private string trainingFilePath;
         private int max_sentence_length = 0;
+        private ActivationNetwork network;
 
         public NeuralNet()
         {
@@ -27,6 +28,18 @@ namespace lambhootDiscordBot
 
         public void setUp()
         {
+            //load exitisting network
+            
+            this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_-4680.bin");
+            this.max_sentence_length = this.network.InputsCount;
+            return;
+
+
+
+
+
+
+
             //read and vectorize training set
             double[][] vectorized_data = vectorize_training_file();
 
@@ -92,19 +105,18 @@ namespace lambhootDiscordBot
             ActivationNetwork network = new ActivationNetwork(
                 new SigmoidFunction(0.0001),
                 max_sentence_length, // max possible inputs passed to the network
-                10, // three neurons in the first layer
-                7, // three neurons in the first layer
-                10, // three neurons in the first layer
-                4, // three neurons in the first layer
+                5, // three neurons in the first layer
+                6, // three neurons in the first layer
+                3, // three neurons in the first layer
                 1); // one neuron in the final (output) layer, picks one char as output
                     // create teacher
             BackPropagationLearning teacher = new BackPropagationLearning(network);
-            teacher.LearningRate = 0.3;
+            teacher.LearningRate = 0.5;
 
             //train
             Console.WriteLine("_TRAINING BEGIN_");
             bool training_complete = false;
-            int training_limit = 1000;
+            int training_limit = 10000;
             while (!training_complete && training_limit > 0)
             {
                 training_limit--;
@@ -114,16 +126,22 @@ namespace lambhootDiscordBot
                 Console.WriteLine("error: " + error);
                 training_complete = error < 0.1;
 
+                if (training_limit % 10 == 0)
+                {//every 1000, save the trained network
+                    network.Save("lambhoot_scripts_neural_network_" + (10 - training_limit) + ".bin");
+                    Console.WriteLine("NEW NEURAL NET SAVED: lambhoot_scripts_neural_network_" + (10 - training_limit) + ".bin");
+                }
+
                 // check error value to see if we need to stop
                 // ...
             }
 
-            network.Save("lambhoot_scripts_neural_network.bin");
+            network.Save("lambhoot_scripts_neural_network_FINAL.bin");
             //Network.Load( "lambhoot_scripts_neural_network.bin" );
 
-            double[] compute_input = { 1, 1 };
+            //double[] compute_input = { 1, 1 };
 
-            double[] computed =  network.Compute(compute_input);
+            //double[] computed =  network.Compute(compute_input);
 
             var x = 0;
         }
@@ -213,10 +231,27 @@ namespace lambhootDiscordBot
 
 
 
-        public string generateSentence()
+        public string generateSentenceFrom(string begin_sentence, int char_length)
         {
+            double[] sentence_vector = sentence_to_vector(begin_sentence);
+            int current_char_length = sentence_vector.Length;
+            double[] input_vector = new double[this.network.InputsCount];
+            for (int i = 0; i < sentence_vector.Length; i++)
+            {
+                input_vector[i] = sentence_vector[i];
+            }
 
-            return "a sentence.";
+            for(int i = current_char_length; i < char_length; i++)
+            {
+                //get next output
+                double[] output = this.network.Compute(input_vector);
+                double next_char_code = (double)output[0];
+                input_vector[i] = Convert.ToInt32(next_char_code);
+            }
+
+            //get the sentence back
+            string sentence = vector_to_sentence(input_vector);
+            return sentence;
         }
 
     }

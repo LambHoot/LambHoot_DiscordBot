@@ -17,12 +17,13 @@ namespace lambhootDiscordBot
             Console.WriteLine("_LambHoot Neural Net Twitter Bot v1.5_");
 
             NeuralNet neural_agent = new NeuralNet();
-            string sentence = neural_agent.generateSentence();
+
+            string sentence = neural_agent.generateSentenceFrom("hello my name is ", 70);
             Console.WriteLine(sentence);
 
-            sentence = "I love my whole LIFE!!!";
-            double[] vector = neural_agent.sentence_to_vector(sentence);
-            string vector_sentence = neural_agent.vector_to_sentence(vector);
+            //sentence = "I love my whole LIFE!!!";
+            //double[] vector = neural_agent.sentence_to_vector(sentence);
+           //string vector_sentence = neural_agent.vector_to_sentence(vector);
 
             var x = 0;
 
