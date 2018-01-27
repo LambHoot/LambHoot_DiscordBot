@@ -26,10 +26,11 @@ namespace lambhootDiscordBot
 
 
 
-
+            
             sentence = neural_agent.generateSentenceFrom("hello my name is ", 70);
 
             Console.WriteLine(sentence);
+            
 
             //Console.WriteLine("_Discord Bot_");
             //MyBot lambhootBot = new MyBot();

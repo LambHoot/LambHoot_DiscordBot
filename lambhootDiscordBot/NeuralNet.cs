@@ -30,9 +30,9 @@ namespace lambhootDiscordBot
         {
             //load exitisting network
             
-            this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_-4680.bin");
-            this.max_sentence_length = this.network.InputsCount;
-            return;
+            //this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_-4680.bin");
+            //this.max_sentence_length = this.network.InputsCount;
+            //return;
 
 
 
@@ -55,8 +55,11 @@ namespace lambhootDiscordBot
             int non_empty_count = 0;
             foreach (InputOutputVectorsPair IOVPair in IOVPairs)
             {
-                if (IOVPair.inputs.Length != 0)
-                    non_empty_count++;
+                if (IOVPair != null)
+                {
+                    if (IOVPair.inputs.Length != 0)
+                        non_empty_count++;
+                }
             }
 
                 
@@ -67,21 +70,24 @@ namespace lambhootDiscordBot
             int io_i = 0;
             foreach (InputOutputVectorsPair IOVPair in IOVPairs)
             {
-                if (IOVPair.inputs.Length != 0)
-                {
-                    foreach (double[] pair_input in IOVPair.inputs)
+                if (IOVPair != null) {
+                    if (IOVPair.inputs.Length != 0)
                     {
-                        if(pair_input != null)
-                            inputs.Add(pair_input);
-                    }
-                    foreach (double[] pair_output in IOVPair.outputs)
-                    {
-                        if (pair_output != null)
-                            outputs.Add(pair_output);
+                        foreach (double[] pair_input in IOVPair.inputs)
+                        {
+                            if (pair_input != null)
+                                inputs.Add(pair_input);
+                        }
+                        foreach (double[] pair_output in IOVPair.outputs)
+                        {
+                            if (pair_output != null)
+                                outputs.Add(pair_output);
+                        }
                     }
                 }
                 io_i++;
             }
+                
 
             double[][] input = inputs.ToArray<double[]>();
             double[][] output = outputs.ToArray<double[]>();
@@ -103,12 +109,12 @@ namespace lambhootDiscordBot
 
             //create neural network
             ActivationNetwork network = new ActivationNetwork(
-                new SigmoidFunction(0.0001),
-                max_sentence_length, // max possible inputs passed to the network
+                new SigmoidFunction(0.1),
+                max_sentence_length * 8, // max possible inputs passed to the network
                 5, // three neurons in the first layer
                 6, // three neurons in the first layer
                 3, // three neurons in the first layer
-                1); // one neuron in the final (output) layer, picks one char as output
+                8); // one neuron in the final (output) layer, picks one char as output
                     // create teacher
             BackPropagationLearning teacher = new BackPropagationLearning(network);
             teacher.LearningRate = 0.5;
@@ -116,7 +122,7 @@ namespace lambhootDiscordBot
             //train
             Console.WriteLine("_TRAINING BEGIN_");
             bool training_complete = false;
-            int training_limit = 10000;
+            int training_limit = 100;
             while (!training_complete && training_limit > 0)
             {
                 training_limit--;
@@ -128,7 +134,7 @@ namespace lambhootDiscordBot
 
                 if (training_limit % 10 == 0)
                 {//every 1000, save the trained network
-                    network.Save("lambhoot_scripts_neural_network_" + (10 - training_limit) + ".bin");
+                    network.Save("lambhoot_scripts_neural_network_binary" + (10 - training_limit) + ".bin");
                     Console.WriteLine("NEW NEURAL NET SAVED: lambhoot_scripts_neural_network_" + (10 - training_limit) + ".bin");
                 }
 
@@ -136,7 +142,7 @@ namespace lambhootDiscordBot
                 // ...
             }
 
-            network.Save("lambhoot_scripts_neural_network_FINAL.bin");
+            network.Save("lambhoot_scripts_neural_network_binary_FINAL.bin");
             //Network.Load( "lambhoot_scripts_neural_network.bin" );
 
             //double[] compute_input = { 1, 1 };
@@ -153,27 +159,41 @@ namespace lambhootDiscordBot
 
             InputOutputVectorsPair[] IOVectorPairs = new InputOutputVectorsPair[vectors.Length];
 
-            int vi = 0;
-            foreach(double[] vector in vectors)
+            int in_out_index = 0;
+            int max_vector_limit = 4000;
+            foreach (double[] vector in vectors)
             {
-                //break down by length and create pairs of input lead and single output character
-                double[][] input = new double[vector.Length][];
-                double[][] output = new double[vector.Length][];
-                for (int i = 0; i < vector.Length - 1; i++)
+
+                double[][] input = new double[vector.Length / 8][];
+                double[][] output = new double[vector.Length / 8][];
+
+                for (int vi = 0; vi < vector.Length; vi++)
                 {
-                    double[] input_row = new double[max_sentence_length];
-                    double[] relevant_input = vector.Take(i).ToArray();
-                    for(int ri = 0; ri < relevant_input.Length; ri++)
+                    //foreach bit in vector vector
+                    if (vi % 8 == 0)
                     {
-                        input_row[ri] = relevant_input[ri];
+                        double[] rel_input = vector.Take(vi).ToArray();
+                        double[] rel_output = vector.Skip(vi).Take(8).ToArray();
+
+                        input[vi / 8] = new double[max_sentence_length * 8];
+                        output[vi / 8] = new double[max_sentence_length * 8];
+
+                        for(int rel_i = 0; rel_i < rel_input.Length; rel_i++)
+                            input[vi / 8][rel_i] = rel_input[rel_i];
+                        for (int rel_o = 0; rel_o < rel_output.Length; rel_o++)
+                            output[vi / 8][rel_o] = rel_output[rel_o];
                     }
-                    input[i] = input_row;
-                    //double[] output = vector.Skip(i).ToArray();
-                    output[i] = new double[]{ vector[i+1] };
                 }
-                //insert into array of pairs
-                IOVectorPairs[vi] = new InputOutputVectorsPair(input, output);
-                vi++;
+                //input and output arrays are full
+
+                //next, fill up IOVectorPairs
+                IOVectorPairs[in_out_index] = new InputOutputVectorsPair(input, output);
+                in_out_index++;
+
+                Console.WriteLine("IOVectorPairs: " + (in_out_index - 1));
+                max_vector_limit--;
+                if (max_vector_limit == 0)
+                    break;//in the sake of memory
             }
             return IOVectorPairs;
         }
@@ -234,10 +254,6 @@ namespace lambhootDiscordBot
                         sentence_vector[i] = 0;
                     i++;
                 }
-            }
-            foreach (double b in sentence_vector)
-            {
-                Console.Write(b);
             }
             return sentence_vector;
         }
