@@ -208,12 +208,36 @@ namespace lambhootDiscordBot
 
         public double[] sentence_to_vector(string sentence)
         {
-            double[] sentence_vector = new double[sentence.Length];
+            System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+            
+
+            double[] sentence_vector = new double[sentence.Length * 8];
             int i = 0;
             foreach (char c in sentence)
             {
-                sentence_vector[i] = (int)(decimal)c;
+                var byte_c = Encoding.UTF8.GetBytes(c.ToString());
+                string binStr = string.Join("", byte_c.Select(b => Convert.ToString(b, 2)));
+
+                //some special characters are coming out with string lengths of 6 missing leading 0
+                while(binStr.Length < 7)
+                {
+                    binStr = '0' + binStr;
+                }
+
+                sentence_vector[i] = 0;
                 i++;
+                foreach (char bit in binStr)
+                {
+                    if(bit == '1')
+                        sentence_vector[i] = 1;
+                    else
+                        sentence_vector[i] = 0;
+                    i++;
+                }
+            }
+            foreach (double b in sentence_vector)
+            {
+                Console.Write(b);
             }
             return sentence_vector;
         }
@@ -222,9 +246,25 @@ namespace lambhootDiscordBot
         public string vector_to_sentence(double[] vector)
         {
             string vector_sentence = "";
-            foreach (int code in vector)
+            for (int i = 0; i < vector.Length; i += 8)
             {
-                vector_sentence += char.ConvertFromUtf32(code);
+                string byte_string = "";
+                for(int j = 0; j < 8; j++)
+                {
+                    byte_string += vector[i + j];
+                }
+
+                var bytesAsStrings =
+                byte_string.Select((c, ii) => new { Char = c, Index = ii })
+                     .GroupBy(x => x.Index / 8)
+                     .Select(g => new string(g.Select(x => x.Char).ToArray()));
+
+                byte[] bytes = bytesAsStrings.Select(s => Convert.ToByte(byte_string, 2)).ToArray();
+
+
+                //take a bytes array with 1 byte and convert the byte into a char
+                char sentence_char = Encoding.UTF8.GetString(bytes)[0];
+                vector_sentence += sentence_char;
             }
             return vector_sentence;
         }
