@@ -29,11 +29,11 @@ namespace lambhootDiscordBot
         public void setUp()
         {
             //load exitisting network
-            
-            //this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_-4680.bin");
-            //this.max_sentence_length = this.network.InputsCount;
-            //return;
-
+            /*
+            this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_binary_FINAL.bin");
+            this.max_sentence_length = this.network.InputsCount;
+            return;
+            */
 
 
 
@@ -108,21 +108,23 @@ namespace lambhootDiscordBot
             */
 
             //create neural network
-            ActivationNetwork network = new ActivationNetwork(
-                new SigmoidFunction(0.1),
+            network = new ActivationNetwork(
+                new SigmoidFunction(0.001),
                 max_sentence_length * 8, // max possible inputs passed to the network
-                5, // three neurons in the first layer
+                11, // three neurons in the first layer
                 6, // three neurons in the first layer
-                3, // three neurons in the first layer
+                5, // three neurons in the first layer
+                4, // three neurons in the first layer
+                8,
                 8); // one neuron in the final (output) layer, picks one char as output
                     // create teacher
             BackPropagationLearning teacher = new BackPropagationLearning(network);
-            teacher.LearningRate = 0.5;
+            teacher.LearningRate = 0.8;
 
             //train
             Console.WriteLine("_TRAINING BEGIN_");
             bool training_complete = false;
-            int training_limit = 100;
+            int training_limit = 1000;
             while (!training_complete && training_limit > 0)
             {
                 training_limit--;
@@ -132,10 +134,10 @@ namespace lambhootDiscordBot
                 Console.WriteLine("error: " + error);
                 training_complete = error < 0.1;
 
-                if (training_limit % 10 == 0)
+                if (training_limit % 50 == 0)
                 {//every 1000, save the trained network
-                    network.Save("lambhoot_scripts_neural_network_binary" + (10 - training_limit) + ".bin");
-                    Console.WriteLine("NEW NEURAL NET SAVED: lambhoot_scripts_neural_network_" + (10 - training_limit) + ".bin");
+                    network.Save("lambhoot_scripts_neural_network_binary" + (50 - training_limit) + ".bin");
+                    Console.WriteLine("NEW NEURAL NET SAVED: lambhoot_scripts_neural_network_" + (50 - training_limit) + ".bin");
                 }
 
                 // check error value to see if we need to stop
@@ -290,7 +292,7 @@ namespace lambhootDiscordBot
         public string generateSentenceFrom(string begin_sentence, int char_length)
         {
             double[] sentence_vector = sentence_to_vector(begin_sentence);
-            int current_char_length = sentence_vector.Length;
+            int current_char_length = sentence_vector.Length / 8;
             double[] input_vector = new double[this.network.InputsCount];
             for (int i = 0; i < sentence_vector.Length; i++)
             {
@@ -301,8 +303,11 @@ namespace lambhootDiscordBot
             {
                 //get next output
                 double[] output = this.network.Compute(input_vector);
-                double next_char_code = (double)output[0];
-                input_vector[i] = Convert.ToInt32(next_char_code);
+                for(int o_i = 0; o_i < output.Length; o_i++)
+                {
+                    input_vector[(current_char_length * 8) + o_i] = Convert.ToInt32(output[o_i]);
+                    current_char_length++;
+                }
             }
 
             //get the sentence back
