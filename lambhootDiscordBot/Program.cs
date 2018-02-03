@@ -27,7 +27,7 @@ namespace lambhootDiscordBot
 
 
             
-            sentence = neural_agent.generateSentenceFrom("hello my name is ", 70);
+            sentence = neural_agent.generateSentenceFrom("hello ", 10);
 
             Console.WriteLine(sentence);
 

@@ -29,11 +29,11 @@ namespace lambhootDiscordBot
         public void setUp()
         {
             //load exitisting network
-            /*
-            this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_binary_FINAL.bin");
+            
+            this.network = (ActivationNetwork)Network.Load("lambhoot_scripts_neural_network_binary-500.bin");
             this.max_sentence_length = this.network.InputsCount;
             return;
-            */
+            
 
 
 
