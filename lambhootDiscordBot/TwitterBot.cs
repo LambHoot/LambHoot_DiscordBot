@@ -18,6 +18,8 @@ namespace lambhootDiscordBot
         private static string access_token = "";
         private static string access_token_secret = "";
 
+        private static bool shutted_up = false;
+
         private string logFilePath, shakespeareFilePath, lambhootFilePath;
         private PartialBiGram botPartialBiGram, shakespeareGram, lambhootGram;
         private System.IO.StreamWriter file;
@@ -94,15 +96,15 @@ namespace lambhootDiscordBot
                                 double chance = randomDoubleRange(0, 100);
                                 if (chance < 1)
                                 {
-                                    //sendResponseTweet(lastTweet);
+                                    //sendResponseTweet(lastTweet);//
                                 }
                             }
                         }).Start();
                     }
 
-                    //Console.WriteLine($"[{DateTime.Now}] -> sleep for 3 MINUTES");
+                    //Console.WriteLine($"[{DateTime.Now}] -> sleep for 1 MINUTES");
                     Console.WriteLine($"[{DateTime.Now}] -> --");
-                    System.Threading.Thread.Sleep((int)(3 * 60000));
+                    System.Threading.Thread.Sleep((int)(1 * 60000));
                 }
                 catch (Exception e)
                 {
@@ -129,6 +131,11 @@ namespace lambhootDiscordBot
             Console.WriteLine($"[{DateTime.Now}] -> Generating response to " + tweetReplyTo.CreatedBy.ScreenName + "...");
             Console.ResetColor();
 
+            if(tweetReplyTo.CreatedBy.ScreenName == "LambH00t")
+            {
+                this.handleAdminCommand(tweetReplyTo.FullText);
+            }
+
             PartialBiGram useLanguageModel;
             double random = randomDoubleRange(0, 100);
             if(random < 20)
@@ -142,17 +149,38 @@ namespace lambhootDiscordBot
 
             string textToPublish = string.Format("@{0} {1}", tweetReplyTo.CreatedBy.ScreenName, newNGramSentence);
             textToPublish = textToPublish.Substring(0, Math.Min(140, textToPublish.Length));
-            Tweet.PublishTweetInReplyTo(textToPublish, tweetReplyTo.Id);
+
+            if(!shutted_up)
+               Tweet.PublishTweetInReplyTo(textToPublish, tweetReplyTo.Id);
 
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"[{DateTime.Now}] -> NEW MENTION: " + textToPublish);
             Console.ResetColor();
         }
 
+        private void handleAdminCommand(string adminCommand)
+        {
+            if(adminCommand.Contains("stop"))
+            {
+                shutted_up = true;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[{DateTime.Now}] -> Shutted Up by Admin.");
+                Console.ResetColor();
+            }
+
+            if(adminCommand.Contains("continue"))
+            {
+                shutted_up = false;
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine($"[{DateTime.Now}] -> Given permission to speak by Admin.");
+                Console.ResetColor();
+            }
+        }
+
         private bool sendRandomTweet()
         {
             double chance = randomDoubleRange(0, 100);
-            if (chance <= 5)
+            if (chance <= 1.5)
             {
                 PartialBiGram useLanguageModel;
                 double random = randomDoubleRange(0, 100);
@@ -171,7 +199,9 @@ namespace lambhootDiscordBot
                 Console.WriteLine($"[{DateTime.Now}] -> NEW RANDOM TWEET: " + tweetString);
                 Console.ResetColor();
 
-                Tweet.PublishTweet(tweetString);
+                if (!shutted_up)
+                    Tweet.PublishTweet(tweetString);
+
                 return true;
             }
             return false;
@@ -222,6 +252,19 @@ namespace lambhootDiscordBot
         {
             if (String.IsNullOrWhiteSpace(msgContent))
                 return;
+
+            //handle case tweet checked is a retweet (RT)
+            if (msgContent.Contains("RT @"))
+            {
+                int semi_colon_index = msgContent.IndexOf(':');
+                if(semi_colon_index > 0)
+                {
+                    Console.WriteLine("Retweet logging...");
+                    //skips two indices for ": "
+                    msgContent = msgContent.Substring(semi_colon_index + 2);
+                }
+            }
+
             file.WriteLine(msgContent);
             file.Flush();
             Console.WriteLine("LOGGED: " + msgContent);

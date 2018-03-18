@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using DSharpPlus;
+//using DSharpPlus;
 
 // following https://github.com/NaamloosDT/DSharpPlus/wiki/Making-your-first-bot-in-C%23
 
@@ -14,12 +14,25 @@ namespace lambhootDiscordBot
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("_LambHoot Discord Bot v1.4 Full nGram & James Bond_");
+            Console.WriteLine("_LambHoot Twitter Bot v1.4 Full nGram_");
 
             //Console.WriteLine("_Discord Bot_");
             //MyBot lambhootBot = new MyBot();
 
             TwitterBot AceTwitter = new TwitterBot();
+
+            ////PartialBiGram bot = new PartialBiGram("C:\\Users\\Denis\\Documents\\Visual Studio 2015\\Projects\\lambhootDiscordBot\\twitter\\shakespeare.txt");
+            ////PartialBiGram bot = new PartialBiGram("C:\\Users\\Denis\\Documents\\Visual Studio 2015\\Projects\\lambhootDiscordBot\\twitter\\LH_Scripts.txt");
+            //PartialBiGram bot = new PartialBiGram("C:\\Users\\Denis\\Documents\\Visual Studio 2015\\Projects\\lambhootDiscordBot\\twitter\\myLog.txt");
+
+            //string sentence, biggramsentence;
+            //var vocab = bot.vocabulary;
+
+            //bot.generateNewBiGramSentence();
+
+            //var x = 3;
+
+
 
             //Console.WriteLine("_Partial BiGram_");
             //PartialBiGram myPartialBiGram = new PartialBiGram();

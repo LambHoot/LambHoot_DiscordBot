@@ -334,7 +334,7 @@ namespace lambhootDiscordBot
                 }
                 if (currentBestIndex != -1)
                 {
-                    returnWord = vocabulary.ElementAt(currentBestIndex).Value;
+                    returnWord = vocabulary.ElementAt(currentBestIndex).Value;//DK - error here when retraining sometimes, race condition?
                     break;
                 }
             }
@@ -403,11 +403,26 @@ namespace lambhootDiscordBot
 
         public int selectRandomIndex(List<IndexProbPair> list)
         {
+            //used to pick one of the next best words randomly
+
             int index = 0;
             float sumProbs = 0;
+            int best_index = 0;
+            float best_prob = 0;
+            int i = 0;
             foreach(IndexProbPair ipp in list){
+                if (ipp.prob > best_prob)
+                {
+                    best_prob = ipp.prob;
+                    best_index = i;
+                }
                 sumProbs += ipp.prob;
+                i++;
             }
+
+            //overriding everything to pick best word
+            return list[best_index].index;
+
             if (sumProbs == 0)
                 return 0;
 
