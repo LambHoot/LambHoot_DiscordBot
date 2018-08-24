@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 
+//build my own api for this eventually
+//https://www.codeproject.com/Tips/1076400/Twitter-API-for-beginners
+
 namespace lambhootDiscordBot
 {
     class TwitterBot
@@ -19,6 +22,9 @@ namespace lambhootDiscordBot
         private static string access_token_secret = "";
 
         private static bool shutted_up = false;
+
+        private bool retraining = false;
+        private int generatingSentences = 0;
 
         private string logFilePath, shakespeareFilePath, lambhootFilePath;
         private PartialBiGram botPartialBiGram, shakespeareGram, lambhootGram;
@@ -43,12 +49,22 @@ namespace lambhootDiscordBot
                 {
                     Console.ForegroundColor = ConsoleColor.Magenta;
                     Console.WriteLine($"[{ DateTime.Now}] -> Retraining at 30 minutes");
-                    file.Close();
-                    botPartialBiGram.retrain();
-                    file = new System.IO.StreamWriter(logFilePath, true);
-                    Console.WriteLine("Retraining complete");
+
+                    if (generatingSentences > 0)
+                    {
+                        Console.WriteLine("Couldn't retrain, busy generating sentence");
+                    }
+                    else
+                    {
+                        retraining = true;
+                        file.Close();
+                        botPartialBiGram.retrain();
+                        file = new System.IO.StreamWriter(logFilePath, true);
+                        Console.WriteLine("Retraining complete");
+                        timeSinceLastTrain = DateTime.Now;
+                        retraining = false;
+                    }
                     Console.ResetColor();
-                    timeSinceLastTrain = DateTime.Now;
                 }
 
                 try {
@@ -63,8 +79,11 @@ namespace lambhootDiscordBot
                         else if ((lastLoggedTweet.Id != timelineTweets.First().Id) && !String.Equals(timelineTweets.First().CreatedBy.ScreenName, "AceNickelback"))
                         {
                             lastLoggedTweet = timelineTweets.First();
-                            string loggedString = lastLoggedTweet.Text;
-                            logMessage(loggedString);
+                            //if (lastLoggedTweet.Truncated == false)
+                            //{
+                                string loggedString = lastLoggedTweet.FullText;
+                                logMessage(loggedString);
+                            //}
                         }
                     }
 
@@ -129,7 +148,15 @@ namespace lambhootDiscordBot
         {
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.WriteLine($"[{DateTime.Now}] -> Generating response to " + tweetReplyTo.CreatedBy.ScreenName + "...");
+            if (retraining)
+            {
+                Console.WriteLine("Couldn't generate response, busy retraining");
+                Console.ResetColor();
+                return;
+            }
             Console.ResetColor();
+
+            generatingSentences++;
 
             if(tweetReplyTo.CreatedBy.ScreenName == "LambH00t")
             {
@@ -138,17 +165,30 @@ namespace lambhootDiscordBot
 
             PartialBiGram useLanguageModel;
             double random = randomDoubleRange(0, 100);
-            if(random < 20)
-                useLanguageModel = shakespeareGram;//20%
-            else if (random < 40)
-                useLanguageModel = lambhootGram;//20%
+            if(random < 10)
+                useLanguageModel = shakespeareGram;//10%
+            else if (random < 45)
+                useLanguageModel = lambhootGram;//45%
             else
-                useLanguageModel = botPartialBiGram;//60%
+                useLanguageModel = botPartialBiGram;//45%
 
             string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
 
-            string textToPublish = string.Format("@{0} {1}", tweetReplyTo.CreatedBy.ScreenName, newNGramSentence);
-            textToPublish = textToPublish.Substring(0, Math.Min(140, textToPublish.Length));
+            string textToPublish = string.Format("@{0}", tweetReplyTo.CreatedBy.ScreenName);
+
+            List<Tweetinvi.Models.Entities.IUserMentionEntity> userMentions = tweetReplyTo.UserMentions;
+            List<string> mentionScreenames = new List<string>();
+            foreach (Tweetinvi.Models.Entities.IUserMentionEntity mentionEntity in userMentions)
+            {
+                if(mentionEntity.ScreenName != "AceNickelback")
+                {
+                    mentionScreenames.Add(mentionEntity.ScreenName);
+                    textToPublish += string.Format(" @{0}", mentionEntity.ScreenName);
+                }
+            }
+
+            textToPublish += string.Format(" {0}", newNGramSentence);
+            textToPublish = textToPublish.Substring(0, Math.Min(250, textToPublish.Length));
 
             if(!shutted_up)
                Tweet.PublishTweetInReplyTo(textToPublish, tweetReplyTo.Id);
@@ -156,6 +196,7 @@ namespace lambhootDiscordBot
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"[{DateTime.Now}] -> NEW MENTION: " + textToPublish);
             Console.ResetColor();
+            generatingSentences--;
         }
 
         private void handleAdminCommand(string adminCommand)
@@ -182,6 +223,15 @@ namespace lambhootDiscordBot
             double chance = randomDoubleRange(0, 100);
             if (chance <= 1.5)
             {
+                if (retraining)
+                {
+                    Console.WriteLine("Couldn't generate random tweet, busy retraining");
+                    Console.ResetColor();
+                    return true;
+                }
+
+                generatingSentences++;
+
                 PartialBiGram useLanguageModel;
                 double random = randomDoubleRange(0, 100);
                 if (random < 10)
@@ -193,7 +243,7 @@ namespace lambhootDiscordBot
 
                 string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
                 string tweetString = newNGramSentence;
-                tweetString = tweetString.Substring(0, Math.Min(140, newNGramSentence.Length));
+                tweetString = tweetString.Substring(0, Math.Min(250, newNGramSentence.Length));
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"[{DateTime.Now}] -> NEW RANDOM TWEET: " + tweetString);
@@ -202,6 +252,7 @@ namespace lambhootDiscordBot
                 if (!shutted_up)
                     Tweet.PublishTweet(tweetString);
 
+                generatingSentences--;
                 return true;
             }
             return false;
@@ -212,12 +263,18 @@ namespace lambhootDiscordBot
             //get user inputs
             Console.WriteLine("customer_key: ");
             customer_key = Console.ReadLine();
+
             Console.WriteLine("customer_key_secret: ");
             customer_key_secret = Console.ReadLine();
+
             Console.WriteLine("access_token: ");
             access_token = Console.ReadLine();
+
             Console.WriteLine("access_token_secret: ");
             access_token_secret = Console.ReadLine();
+
+            Console.Clear();
+
             Auth.SetUserCredentials(customer_key, customer_key_secret, access_token, access_token_secret);
         }
 

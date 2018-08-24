@@ -257,6 +257,15 @@ namespace lambhootDiscordBot
                     else
                     {
                         //it failed to find a proper word. add punctuation if necessary and choose new random word
+
+                        //TEMP
+                        //CUTTING OFF HERE SO IT ONLY TRIES ONE SENTENCE
+                        //REMOVE FOR MULTI SENTENCE GENERATION
+                        returnString += ".";
+                        sentenceLength = -1;
+                        allSentenceLength = -1;
+                        break;
+
                         if (!Char.IsPunctuation(returnString.Last()))
                             returnString += (MyBot.randomDoubleRange(0, 100) > 50) ? "," : ".";
                         //add a comma or period to it since it failed, if the last character isn't already a punctuation

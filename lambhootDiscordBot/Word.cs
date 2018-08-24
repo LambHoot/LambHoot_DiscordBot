@@ -177,7 +177,7 @@ namespace lambhootDiscordBot
             {
                 nextWordProb += myLog(p);
             }
-            return nextWordProb;
+            return nextWordProb;//TODO *prop_sentence / prob_word
         }
 
         public float ProbabilityOfWordgivenB(Word b, int gn = 0)
