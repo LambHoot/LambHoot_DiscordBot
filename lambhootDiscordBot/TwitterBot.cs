@@ -26,6 +26,9 @@ namespace lambhootDiscordBot
         private bool retraining = false;
         private int generatingSentences = 0;
 
+        //@LambH00t
+        private int admin_id = 1197092900;
+
         private string logFilePath, shakespeareFilePath, lambhootFilePath;
         private PartialBiGram botPartialBiGram, shakespeareGram, lambhootGram;
         private System.IO.StreamWriter file;
@@ -70,6 +73,11 @@ namespace lambhootDiscordBot
                 try {
                     var tweets = Timeline.GetMentionsTimeline(1);
                     var timelineTweets = Timeline.GetHomeTimeline(1);
+
+                    //var dms = Message.GetLatestMessages();
+                    //var admin_dms = dms.Where(dm => dm.SenderId == admin_id);
+
+                    //var x = "caca";
 
                     //log new timelines tweets
                     if (timelineTweets != null)
@@ -275,7 +283,8 @@ namespace lambhootDiscordBot
 
             Console.Clear();
 
-            Auth.SetUserCredentials(customer_key, customer_key_secret, access_token, access_token_secret);
+            ITwitterCredentials creds = new TwitterCredentials(customer_key, customer_key_secret, access_token, access_token_secret);
+            Auth.SetCredentials(creds);
         }
 
         private void setUp()
