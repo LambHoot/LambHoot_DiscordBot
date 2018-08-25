@@ -170,7 +170,7 @@ namespace lambhootDiscordBot
             else if (random < 45)
                 useLanguageModel = lambhootGram;//45%
             else
-                useLanguageModel = botPartialBiGram;//45%
+                useLanguageModel = lambhootGram;//botPartialBiGram;//45%
 
             string newNGramSentence = useLanguageModel.generateNewBiGramSentence();
 
@@ -237,7 +237,7 @@ namespace lambhootDiscordBot
                 if (random < 10)
                     useLanguageModel = shakespeareGram;//10%
                 else if (random < 55)
-                    useLanguageModel = botPartialBiGram;//45%
+                    useLanguageModel = lambhootGram;//for safety, only usinf lambhootGram for tweets, temp//botPartialBiGram;//45%
                 else
                     useLanguageModel = lambhootGram;//45%
 
