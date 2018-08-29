@@ -19,3 +19,4 @@ C:\Users\Denis\Documents\GitHub\LambHoot_DiscordBot\lambhootTwitterBot\obj\Debug
 C:\Users\Denis\Documents\GitHub\LambHoot_DiscordBot\lambhootTwitterBot\obj\Debug\netcoreapp2.2\lambhootTwitterBot.AssemblyInfo.cs
 C:\Users\Denis\Documents\GitHub\LambHoot_DiscordBot\lambhootTwitterBot\obj\Debug\netcoreapp2.2\lambhootTwitterBot.dll
 C:\Users\Denis\Documents\GitHub\LambHoot_DiscordBot\lambhootTwitterBot\obj\Debug\netcoreapp2.2\lambhootTwitterBot.pdb
+C:\Users\Denis\Documents\GitHub\LambHoot_DiscordBot\lambhootTwitterBot\obj\Debug\netcoreapp2.2\lambhootTwitterBot.csprojAssemblyReference.cache
